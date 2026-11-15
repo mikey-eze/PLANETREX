@@ -5,11 +5,29 @@ const TAU=Math.PI*2;
 const state={body:"moon",mode:"dual",orbit:false,sites:[],reference:null,candidates:[],site:null,earth:null,evidence:null,filter:"all",requestToken:0,evidenceToken:0,snapshotToken:0,angles:{target:-0.5,earth:-0.3},pitches:{target:0.18,earth:0.18},zooms:{target:1,earth:1}};
 const globes={target:{canvas:$("target-globe"),texture:"moon",markers:[],hits:[],drag:null},earth:{canvas:$("earth-globe"),texture:"earth",markers:[],hits:[],drag:null}};
 const textures={};
-const sources={moon:"https://www.solarsystemscope.com/textures/download/2k_moon.jpg",mars:"https://www.solarsystemscope.com/textures/download/2k_mars.jpg",earth:"https://www.solarsystemscope.com/textures/download/2k_earth_daymap.jpg"};
+const sources={moon:"/visual/texture/moon.jpg",mars:"/visual/texture/mars.jpg",earth:"/visual/texture/earth.jpg"};
+const fallbackSources={moon:"https://www.solarsystemscope.com/textures/download/2k_moon.jpg",mars:"https://www.solarsystemscope.com/textures/download/2k_mars.jpg",earth:"https://www.solarsystemscope.com/textures/download/2k_earth_daymap.jpg"};
+const texturePixels={};
 for(const [body,url] of Object.entries(sources)){
  const img=new Image();textures[body]=img;
- img.onload=()=>{img.ready=true;paintBoth()};
- img.onerror=()=>{img.ready=false;paintBoth()};
+ img.onload=()=>{
+   img.ready=true;
+   // Same-origin texture fetch lets Canvas read full-resolution pixel data.
+   // When a remote source is unavailable, keep the gradient + fallback image.
+   try{
+     const surface=document.createElement("canvas");
+     surface.width=img.naturalWidth;surface.height=img.naturalHeight;
+     const surfaceCtx=surface.getContext("2d",{willReadFrequently:true});
+     surfaceCtx.drawImage(img,0,0);
+     texturePixels[body]={width:surface.width,height:surface.height,
+       data:surfaceCtx.getImageData(0,0,surface.width,surface.height).data};
+   }catch(error){delete texturePixels[body];}
+   paintBoth();
+ };
+ img.onerror=()=>{
+   if(!img.fallbackUsed){img.fallbackUsed=true;img.src=fallbackSources[body];return;}
+   img.ready=false;delete texturePixels[body];paintBoth();
+ };
  img.src=url;
 }
 async function json(path){const response=await fetch(path,{headers:{"Accept":"application/json"}});if(!response.ok)throw new Error("HTTP "+response.status);return response.json();}
@@ -33,6 +51,8 @@ function currentIndex(body){return state.sites.findIndex(s=>s.id===body)}
 function setMode(mode){
  state.mode=mode;
  const grid=$("stages");
+ const workspace=document.querySelector(".mission-workspace");
+ workspace.classList.toggle("layout-single",mode!=="dual");
  grid.classList.toggle("only-target",mode==="target");
  grid.classList.toggle("only-earth",mode==="earth");
  for(const kind of ["dual","target","earth"]){
@@ -57,32 +77,79 @@ function globeProject(lat,lon,kind){
  const pitch=state.pitches[kind],cp=Math.cos(pitch),sp=Math.sin(pitch);
  return {x,y:y*cp-z*sp,z:y*sp+z*cp};
 }
+// Full-resolution, one-to-one pixel sampling with bilinear texture filtering.
+// Replaces the old 8px image tiles that produced visible rectangular patches.
+function drawSmoothSphere(ctx,texture,cx,cy,R,angle,pitch){
+ const left=Math.max(0,Math.floor(cx-R-1));
+ const top=Math.max(0,Math.floor(cy-R-1));
+ const right=Math.min(ctx.canvas.width,Math.ceil(cx+R+1));
+ const bottom=Math.min(ctx.canvas.height,Math.ceil(cy+R+1));
+ const width=right-left,height=bottom-top;
+ const result=ctx.createImageData(width,height);
+ const output=result.data,source=texture.data,sw=texture.width,sh=texture.height;
+ const cosPitch=Math.cos(pitch),sinPitch=Math.sin(pitch);
+ for(let y=top;y<bottom;y++){
+  const ny=-(y+.5-cy)/R,ny2=ny*ny;
+  if(ny2>=1)continue;
+  for(let x=left;x<right;x++){
+   const nx=(x+.5-cx)/R,dist=nx*nx+ny2;
+   if(dist>=1)continue;
+   const nz=Math.sqrt(1-dist);
+   const worldY=Math.max(-1,Math.min(1,ny*cosPitch+nz*sinPitch));
+   const worldZ=nz*cosPitch-ny*sinPitch;
+   const latitude=Math.asin(worldY);
+   const longitude=Math.atan2(nx,worldZ)-angle;
+   const u=((longitude/TAU+.5)%1+1)%1*sw;
+   const v=Math.max(0,Math.min(sh-1.001,(.5-latitude/Math.PI)*sh));
+   const x0=Math.floor(u),y0=Math.floor(v);
+   const x1=(x0+1)%sw,y1=Math.min(sh-1,y0+1);
+   const fx=u-x0,fy=v-y0;
+   const i00=(y0*sw+x0)*4,i10=(y0*sw+x1)*4;
+   const i01=(y1*sw+x0)*4,i11=(y1*sw+x1)*4;
+   const w00=(1-fx)*(1-fy),w10=fx*(1-fy),w01=(1-fx)*fy,w11=fx*fy;
+   const outIndex=((y-top)*width+(x-left))*4;
+   // Soft directional lighting without obliterating texture details.
+   const illumination=.74+.26*Math.max(0,nz*.87+nx*(-.24)+ny*.19);
+   const limb=.81+.19*Math.sqrt(nz);
+   const light=illumination*limb;
+   for(let channel=0;channel<3;channel++)
+     output[outIndex+channel]=Math.min(255,(
+       source[i00+channel]*w00+source[i10+channel]*w10+
+       source[i01+channel]*w01+source[i11+channel]*w11)*light);
+   output[outIndex+3]=255;
+  }
+ }
+ ctx.putImageData(result,left,top);
+}
+
 function renderSphere(kind){
  const obj=globes[kind],canvas=obj.canvas,ctx=canvas.getContext("2d");
  const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,R=Math.min(w,h)*.365*state.zooms[kind];
  ctx.clearRect(0,0,w,h);obj.hits=[];
  const img=textures[obj.texture];
  ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.clip();
- const base=kind==="earth"?"#244f8a":state.body==="mars"?"#a46142":"#aeb8c1";
- let grd=ctx.createRadialGradient(cx-R*.34,cy-R*.43,R*.04,cx+R*.3,cy+R*.22,R*1.55);
- grd.addColorStop(0,kind==="earth"?"#81b0dd":state.body==="mars"?"#e8ad7d":"#e4e7e9");
- grd.addColorStop(.7,base);grd.addColorStop(1,"#111923");
- ctx.fillStyle=grd;ctx.fillRect(cx-R,cy-R,2*R,2*R);
- if(img?.ready && img.naturalWidth){
-  // Pixel-aligned projected map. Tile sampling avoids reading cross-origin image pixels.
-  const step=8,cp=Math.cos(state.pitches[kind]),sp=Math.sin(state.pitches[kind]);
-  for(let dy=-R;dy<R;dy+=step){
-   for(let dx=-R;dx<R;dx+=step){
-    const nx=(dx+step/2)/R,ny=-(dy+step/2)/R,dist=nx*nx+ny*ny;
-    if(dist>1)continue;
-    const nz=Math.sqrt(1-dist);
-    const worldY=ny*cp+nz*sp;
-    const worldZ=nz*cp-ny*sp;
+ const textured=texturePixels[obj.texture];
+ if(textured){
+  drawSmoothSphere(ctx,textured,cx,cy,R,state.angles[kind],state.pitches[kind]);
+  canvas.dataset.textureQuality="full-resolution";
+ }else{
+  canvas.dataset.textureQuality="fallback";
+  const base=kind==="earth"?"#3d80ad":state.body==="mars"?"#ae7452":"#9daebc";
+  const shade=ctx.createRadialGradient(cx-R*.35,cy-R*.34,R*.05,cx+R*.23,cy+R*.25,R*1.32);
+  shade.addColorStop(0,"#e9f4fb");shade.addColorStop(.48,base);shade.addColorStop(1,"#17283d");
+  ctx.fillStyle=shade;ctx.fillRect(cx-R,cy-R,R*2,R*2);
+  // Graceful compatibility mode: 3-pixel tiles instead of former 8-pixel blocks.
+  if(img?.ready && img.naturalWidth){
+   const step=3,cp=Math.cos(state.pitches[kind]),sp=Math.sin(state.pitches[kind]);
+   for(let dy=-R;dy<R;dy+=step)for(let dx=-R;dx<R;dx+=step){
+    const nx=(dx+step/2)/R,ny=-(dy+step/2)/R;
+    const dist=nx*nx+ny*ny;if(dist>=1)continue;
+    const nz=Math.sqrt(1-dist),worldY=ny*cp+nz*sp,worldZ=nz*cp-ny*sp;
     const latitude=Math.asin(Math.max(-1,Math.min(1,worldY)));
     const longitude=Math.atan2(nx,worldZ)-state.angles[kind];
     const sx=((longitude/TAU+.5)%1+1)%1*img.naturalWidth;
-    const sy=(.5-latitude/Math.PI)*img.naturalHeight;
-    try{ctx.drawImage(img,sx,sy,Math.min(7,img.naturalWidth-sx),7,cx+dx,cy+dy,step+1,step+1)}catch(e){}
+    const sy=Math.max(0,Math.min(img.naturalHeight-5,(.5-latitude/Math.PI)*img.naturalHeight));
+    ctx.drawImage(img,sx,sy,Math.min(3,img.naturalWidth-sx),3,cx+dx,cy+dy,step+1,step+1);
    }
   }
  }
