@@ -1,22 +1,22 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PLANETREX — Mission Observatory</title>
+<title>PLANETREX — Planetary Mission Observatory</title>
 <link rel="stylesheet" href="/explorer-assets/observatory.css">
 <script src="/explorer-assets/observatory.js" defer></script>
-</head>
-<body>
+</head><body>
 <header class="command-bar">
- <div class="identity"><div class="sigil">◉</div><div><strong>PLANETREX</strong><small>MISSION OBSERVATORY / SCIENCE PILOT</small></div></div>
- <div class="command-group"><span class="micro-label">TARGET</span><div class="toggle" id="target-switch" aria-label="Choose target body"><button id="target-moon" class="active" type="button" aria-pressed="true">MOON</button><button id="target-mars" type="button" aria-pressed="false">MARS</button></div></div>
- <div class="command-group"><span class="micro-label">VIEW</span><div class="toggle view-toggle" id="view-switch"><button id="mode-dual" type="button" class="active" aria-pressed="true">DUAL VIEW</button><button id="mode-target" type="button" aria-pressed="false">TARGET</button><button id="mode-earth" type="button" aria-pressed="false">EARTH</button></div></div>
- <button id="orbit-switch" class="outline-button" aria-pressed="false" type="button"><span class="indicator"></span> ORBIT: OFF</button>
- <div class="connection" id="connection-status" role="status"><span class="connection-dot"></span><div>DATA SERVICE <strong>CHECKING</strong></div></div>
+ <div class="identity"><div class="sigil" aria-hidden="true">◉</div><div><strong>PLANETREX</strong><small>MISSION OBSERVATORY</small></div></div>
+ <div class="command-group"><span class="micro-label">TARGET</span><div class="toggle" id="target-switch"><button id="target-moon" class="active" type="button" aria-pressed="true">MOON</button><button id="target-mars" type="button" aria-pressed="false">MARS</button></div></div>
+ <div class="command-group"><span class="micro-label">VIEW</span><div class="toggle view-toggle" id="view-switch"><button id="mode-dual" class="active" type="button" aria-pressed="true">DUAL</button><button id="mode-target" type="button" aria-pressed="false">TARGET</button><button id="mode-earth" type="button" aria-pressed="false">EARTH</button></div></div>
+ <button id="orbit-switch" class="outline-button" aria-pressed="false" type="button">● ORBIT: OFF</button>
+ <button id="show-data" class="primary-button data-open" aria-controls="telemetry" aria-expanded="true" type="button">◫ VIEW DATA</button>
+ <div class="connection" id="connection-status" role="status">CHECKING DATA</div>
 </header>
 <main>
 <section class="mission-head">
- <div><p class="eyebrow">SCIENTIFIC DISCOVERY / EARTH ANALOGS</p><h1>Planetary Surface Observatory</h1><p class="lead">Explore a lunar or Martian location alongside its ranked terrestrial terrain counterparts. Original NASA terrain data, source links, and visible scientific gaps.</p></div>
- <div class="mission-status"><span>MEASURED COMPARISON</span><strong id="coverage-count">1 / 8 DOMAINS</strong><small>Topography only · preliminary</small></div>
+ <div><p class="eyebrow">MOON · MARS · EARTH</p><h1>PLANETREX</h1><p class="lead">Explore planetary terrain. Compare real Earth analog candidates.</p></div>
+ <div class="mission-status"><span>MEASURED DOMAINS</span><strong id="coverage-count">1 / 8</strong><small>Terrain only</small></div>
 </section>
 <div class="mission-workspace">
 <section id="stages" class="celestial-grid" aria-label="Dual celestial comparison">
@@ -37,43 +37,48 @@
    <div class="orb-hint">DRAG TO ROTATE · WHEEL TO ZOOM</div>
    <button class="reset-btn" id="reset-earth" type="button" aria-label="Reset Earth orientation">↺ RESET</button>
   </div>
-  <div class="stage-footer"><div><span class="eyebrow">CURRENT EARTH CANDIDATE</span><strong id="earth-selection">Select a target site to discover analogs</strong><small id="earth-coordinates">Actual elevation comparisons appear below</small></div><span class="live-tag" id="earth-source-status">AWAITING SITE</span></div>
-  <p class="stage-disclaimer">Markers show terrain-screening candidates, not verified base locations.</p>
+  <div class="stage-footer"><div><span class="eyebrow">CURRENT EARTH CANDIDATE</span><strong id="earth-selection">Select a target site to discover analogs</strong><small id="earth-coordinates">Terrain comparison available in Data</small></div><span class="live-tag" id="earth-source-status">AWAITING SITE</span></div>
+  <p class="stage-disclaimer">Terrain candidates only · not certified landing sites.</p>
  </article>
 </section>
-<section class="telemetry" id="telemetry" aria-labelledby="telemetry-heading">
- <header class="telemetry-bar"><div><span class="eyebrow">LIVE-QUERY SUPPORT · CACHED SCIENTIFIC RANKINGS</span><h2 id="telemetry-heading">Scientific Telemetry <span class="telemetry-status" id="telemetry-status">AWAITING PLANETARY SITE</span></h2></div><button id="drawer-toggle" class="outline-button" type="button" aria-expanded="true">− HIDE DETAILS</button></header>
+</div>
+<aside class="telemetry" id="telemetry" role="dialog" aria-modal="false" aria-labelledby="telemetry-heading">
+ <header class="telemetry-bar"><div><span class="eyebrow">SELECTED SITE · MEASURED DATA</span><h2 id="telemetry-heading">Analog Snapshot</h2></div><button id="drawer-toggle" class="close-button" type="button" aria-label="Close data window" title="Close and view globe">×</button></header>
  <div class="telemetry-body" id="telemetry-body">
-  <section class="instrument" aria-label="Physical topography comparison">
-   <div class="instrument-title"><span class="instrument-index">01</span><h3>Physical Topography Delta</h3></div>
-   <p class="desc">Actual 24 km-window DEM descriptors. Absolute elevation and slope are not comparable measurements here; relief and vertical spread are.</p>
-   <div class="metric-title">LOCAL RELIEF <small>METRES</small></div><div class="compare"><div><span>MOON / MARS</span><strong id="target-relief">—</strong></div><div><span>EARTH</span><strong id="earth-relief">—</strong></div></div>
-   <div class="metric-title">HEIGHT STD. DEVIATION <small>METRES · NOT SLOPE</small></div><div class="compare"><div><span>MOON / MARS</span><strong id="target-roughness">—</strong></div><div><span>EARTH</span><strong id="earth-roughness">—</strong></div></div>
-   <div class="data-status" id="distance-status">Select a target to retrieve terrain results.</div>
-   <button id="query-elevation" class="primary-button" type="button" disabled>QUERY COPERNICUS 90m ELEVATION</button>
-   <div class="query-result" id="elevation-result">On-demand Earth elevation is a separate point sample, not part of the 24 km ranking.</div>
-   <div class="sources"><a id="planet-data-link" href="https://pds.nasa.gov/" target="_blank" rel="noopener noreferrer">Planetary terrain source</a><a id="earth-data-link" href="https://www.opentopodata.org/datasets/aster/" target="_blank" rel="noopener noreferrer">Earth ASTER source</a></div>
-  </section>
-  <section class="instrument" aria-label="Mission experiment matrix">
-   <div class="instrument-title"><span class="instrument-index">02</span><h3>Experiment Suitability Matrix</h3></div>
-   <p class="desc">Five proposed mission experiments. <strong>Readiness is not scientifically rated</strong> without field tests, resources, and engineering data.</p>
-   <div id="domain-matrix" class="domain-matrix">
-    <p class="muted">Choose a site to see evidence and limitations.</p>
+  <div class="popup-location"><span id="popup-target">MOON / MARS</span><span class="popup-arrow" aria-hidden="true">→</span><strong id="popup-earth">EARTH CANDIDATE</strong><small id="telemetry-status">SELECT A SITE</small></div>
+  <section class="instrument summary-instrument" aria-label="Key Earth and terrain measurements">
+   <div class="quick-stats">
+    <div class="mini-stat"><span>EARTH AIR TEMP <small>JAN 2025</small></span><strong id="earth-temp">—</strong></div>
+    <div class="mini-stat"><span>EARTH ELEVATION <small>POINT SAMPLE</small></span><strong id="earth-point-elevation">—</strong></div>
+    <div class="mini-stat"><span>TERRAIN DISTANCE <small>LOWER = CLOSER</small></span><strong id="distance-score">—</strong></div>
    </div>
-   <div id="evidence-warning" class="caution">Earth’s atmosphere, gravity and radiation differ from lunar and Martian environments.</div>
+   <div class="metric-row"><span>Relief · target / Earth</span><strong><span id="target-relief">—</span> / <span id="earth-relief">—</span> m</strong></div>
+   <div class="metric-row"><span>Height variation · target / Earth</span><strong><span id="target-roughness">—</span> / <span id="earth-roughness">—</span> m</strong></div>
+   <p class="simple-note" id="distance-status">Select a site to compare measured terrain.</p>
+   <button id="query-elevation" class="subtle-button" type="button" disabled>↻ REFRESH EARTH DATA</button>
+   <div class="query-result" id="elevation-result">Earth temperature and point elevation load when a candidate is selected.</div>
   </section>
   <section class="instrument candidate-instrument" aria-label="Earth analog candidates">
-   <div class="instrument-title"><span class="instrument-index">03</span><h3>Candidate Switcher</h3></div>
-   <p class="desc">Sorted by measured terrain distance (lower = closer). Mission-domain filters are <strong>research-interest labels</strong>, not proven suitability.</p>
-   <label class="search-label" for="candidate-search">SEARCH EARTH LOCATIONS</label>
-   <input id="candidate-search" type="search" placeholder="Coordinates or region…">
-   <div class="filter-row" id="domain-filters"><button class="filter active" data-domain="all" type="button">ALL</button><button class="filter" data-domain="habitat" type="button">HABITAT</button><button class="filter" data-domain="rover" type="button">ROVER</button><button class="filter" data-domain="isru" type="button">ISRU</button><button class="filter" data-domain="life" type="button">LIFE</button><button class="filter" data-domain="drill" type="button">DRILL</button></div>
-   <div id="candidate-list" class="candidate-list" aria-live="polite"><p class="muted">Select a planetary site to show screened Earth candidates.</p></div>
-   <div class="candidate-footer"><span id="candidate-count">0 CANDIDATES</span><span>NOT A HABITABILITY SCORE</span></div>
+   <div class="instrument-title"><h3>Earth candidates</h3><span id="candidate-count" class="candidate-total">0 CANDIDATES</span></div>
+   <label class="search-label" for="candidate-search">SEARCH</label>
+   <input id="candidate-search" type="search" placeholder="Region or coordinates">
+   <div class="filter-row" id="domain-filters">
+    <button class="filter active" type="button" data-domain="all">ALL</button><button class="filter" type="button" data-domain="habitat">HABITAT</button><button class="filter" type="button" data-domain="rover">ROVER</button><button class="filter" type="button" data-domain="isru">ISRU</button><button class="filter" type="button" data-domain="life">LIFE</button><button class="filter" type="button" data-domain="drill">DRILL</button>
+   </div>
+   <div id="candidate-list" class="candidate-list" aria-live="polite"><p class="muted">Select a planetary site.</p></div>
   </section>
+  <details class="detail-fold"><summary>Mission use & limits</summary>
+   <div class="instrument"><div id="domain-matrix" class="domain-matrix"></div><p class="simple-note" id="evidence-warning">Earth cannot reproduce lunar or Martian gravity, atmosphere and radiation.</p></div>
+  </details>
+  <details class="detail-fold resources"><summary>Data & sources</summary>
+   <div class="source-links">
+    <a id="planet-data-link" href="https://pds.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA planetary terrain</a>
+    <a id="earth-data-link" href="https://www.opentopodata.org/datasets/aster/" target="_blank" rel="noopener noreferrer">NASA/METI Earth DEM</a>
+    <a href="https://power.larc.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA POWER · air temperature</a>
+    <a href="/science/coverage" target="_blank" rel="noopener noreferrer">Data coverage & limitations</a>
+   </div>
+  </details>
  </div>
-</section>
-</div>
-<footer class="bottom-note">PLANETREX SCIENTIFIC PILOT · NASA LOLA / MOLA planetary terrain, NASA/METI ASTER Earth terrain, Copernicus DEM point queries via Open-Meteo. Surface maps from Solar System Scope (CC BY 4.0). <a href="/explorer">Open legacy explorer</a> · <a href="/science/coverage" target="_blank" rel="noopener noreferrer">Data coverage</a></footer>
-</main>
-</body></html>
+</aside>
+<footer class="bottom-note">PLANETREX · Preliminary terrain research, not physical similarity percentages or landing-site certification. <a href="/science/coverage" target="_blank" rel="noopener noreferrer">Data coverage</a> · <a href="/explorer">Classic explorer</a></footer>
+</main></body></html>
