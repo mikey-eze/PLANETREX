@@ -30,6 +30,7 @@ from app.api.routes.mro_measured import router as mro_measured_router
 from app.api.routes.earth_processes import router as earth_processes_router
 from app.api.routes.science_coverage import router as science_coverage_router
 from app.api.routes.deep_comparison import router as deep_comparison_router
+from app.api.routes.analog_catalog import router as analog_catalog_router
 
 
 def create_app() -> FastAPI:
@@ -65,6 +66,7 @@ def create_app() -> FastAPI:
     application.include_router(earth_processes_router)
     application.include_router(science_coverage_router)
     application.include_router(deep_comparison_router)
+    application.include_router(analog_catalog_router)
     explorer_dir = Path(__file__).resolve().parent / "web"
     application.mount("/explorer-assets", StaticFiles(directory=explorer_dir), name="explorer-assets")
 
