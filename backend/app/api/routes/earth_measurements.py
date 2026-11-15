@@ -136,10 +136,10 @@ async def earthdata_catalog(
     for item in entries[:limit]:
         rows.append({"id": item.get("id"), "title": item.get("title"),
                      "short_name": item.get("short_name"),"version":item.get("version_id"),
-                     "source_url": item.get("online_access_flag"),
+                     "source_url": CMR,
                      "data_center": item.get("data_center"),
                      "concept_id": item.get("id"),
-                     "catalog_url": CMR})
+                     "catalog_url": "https://cmr.earthdata.nasa.gov/search/concepts/" + str(item.get("id")) if item.get("id") else CMR})
     return {
         "source": "NASA Earthdata Common Metadata Repository", "keyword": keyword,
         "retrieved_at": _time(), "collections": rows, "count": len(rows),
