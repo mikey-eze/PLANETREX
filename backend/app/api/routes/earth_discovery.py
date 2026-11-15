@@ -9,10 +9,13 @@ Every stored Earth terrain region is eligible, including non-famous locations.
 from __future__ import annotations
 import json
 import math
+import asyncio
+import time
 from pathlib import Path
 from typing import Literal
 from fastapi import APIRouter, HTTPException, Query
 from app.api.routes.terrain_survey import read_dataset
+from app.pipeline.earth_deep_scan import fetch_power, fetch_geology
 
 router=APIRouter(prefix="/science",tags=["Global multi-source Earth analog discovery"])
 FIELD_FILE=Path(__file__).resolve().parents[4]/"data"/"earth_science_profiles.json"
@@ -137,3 +140,44 @@ def earth_field_profile(earth_id:str)->dict:
     return {**profile,"source_evidence":summarize_earth_profile(profile),
             "scientific_similarity_percent":None,
             "note":"Source-derived terrestrial geology, climate and water/wind descriptors; lunar/Mars physical comparability needs separate target feature data."}
+
+POINT_CACHE:dict[tuple[float,float],tuple[float,dict]]={}
+
+@router.get("/earth-environmental-profile")
+async def live_earth_environmental_profile(
+    latitude:float=Query(ge=-90,le=90),
+    longitude:float=Query(ge=-180,le=180),
+)->dict:
+    """Actual annual NASA meteorology and mapped geology for ANY Earth point.
+    
+    Separate per-provider failures never become estimated values. Cached 24h.
+    """
+    key=(round(latitude,4),round(longitude,4))
+    old=POINT_CACHE.get(key)
+    if old and time.monotonic()-old[0]<86400:
+        return {**old[1],"cache_status":"cached"}
+    tasks=await asyncio.gather(
+        asyncio.to_thread(fetch_power,*key),
+        asyncio.to_thread(fetch_geology,*key),
+        return_exceptions=True)
+    measurements={}
+    status={}
+    errors=[]
+    for label,record in zip(("power_annual","geology"),tasks):
+        if isinstance(record,BaseException):
+            status[label]="unavailable"
+            errors.append({"source":label,"error":type(record).__name__})
+        else:
+            status[label]="sourced"
+            measurements[label]=record
+    output={"latitude":key[0],"longitude":key[1],"year":"2025",
+            "earth_measurements":measurements,"source_status":status,
+            "errors":errors,
+            "source_evidence":summarize_earth_profile({
+                "earth_measurements":measurements,"source_status":status,"errors":errors}),
+            "source_count":sum(v=="sourced" for v in status.values()),
+            "scientific_similarity_percent":None,
+            "claim":"Earth 2025 environmental and geological evidence, not paired lunar/Martian physics"}
+    if len(POINT_CACHE)>=100:POINT_CACHE.pop(next(iter(POINT_CACHE)))
+    if measurements:POINT_CACHE[key]=(time.monotonic(),output)
+    return {**output,"cache_status":"fresh"}
