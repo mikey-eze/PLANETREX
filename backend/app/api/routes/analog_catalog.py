@@ -47,3 +47,23 @@ def candidates(body:Literal["moon","mars"],site_id:str,
             "results":rows[offset:offset+limit],
             "ranking_basis":"Measured DEM relief and height variation only",
             "scientific_similarity_percent":None}
+
+@router.get("/analog-catalog/site")
+def site_comparison(body:Literal["moon","mars"],site_id:str,earth_id:str):
+    data=read_catalog()
+    if data is None:
+        raise HTTPException(503,"Batch catalog not generated or deployed")
+    record=data["results"].get(f"{body}:{site_id}")
+    if record is None:
+        raise HTTPException(404,"Planetary reference not in measured catalog")
+    row=next((r for r in record["candidates"] if r["earth_id"]==earth_id),None)
+    if row is None:
+        raise HTTPException(404,"Earth region not in measured catalog")
+    return {"ready":True,"body":body,"site_id":site_id,
+            "planetary_reference":record["planetary_reference"],
+            "earth_candidate":row,
+            "terrain_similarity_percent":row["measured_terrain_similarity_percent"],
+            "coverage_percent":row["domain_coverage_percent"],
+            "overall_eight_domain_similarity_percent":None,
+            "domain_results":row["domains"],
+            "score_disclaimer":"Terrain percentage is a descriptive transform of two DEM metrics, not a calibrated scientific match. Other domains are not yet paired."}
