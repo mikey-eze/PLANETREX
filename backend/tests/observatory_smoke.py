@@ -95,7 +95,7 @@ def check():
                 assert "mars" in page.locator("#target-title").inner_text().lower()
                 assert page.locator("#candidate-count").inner_text().split()[0]!="0"
                 page.locator("#domain-filters [data-domain='isru']").click()
-                assert page.locator("#candidate-list").inner_text().find("No verified ISRU")!=-1
+                assert "Earth rock-map evidence" in page.locator("#candidate-list").inner_text()
                 page.locator("#domain-filters [data-domain='all']").click()
                 assert page.locator("#candidate-list .candidate").count()>=1
                 page.locator("#candidate-list .candidate").last.click()
