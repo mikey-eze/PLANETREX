@@ -1,7 +1,7 @@
 "use strict";
 // Moon-first interactive research viewer. Navigation sites are not similarity claims.
 const $=id=>document.getElementById(id);
-const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0,evidence:null,evidenceLoading:false,evidenceSeq:0,surface:null,surfaceLoading:false,surfaceSeq:0,ctxMeasured:null,ctxMeasuredLoading:false,ctxMeasuredSeq:0,processes:null,processLoading:false,processSeq:0};
+const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0,evidence:null,evidenceLoading:false,evidenceSeq:0,surface:null,surfaceLoading:false,surfaceSeq:0,ctxMeasured:null,ctxMeasuredLoading:false,ctxMeasuredSeq:0,processes:null,processLoading:false,processSeq:0,geology:null,geologyLoading:false,geologySeq:0};
 const canvas=$("globe"),ctx=canvas.getContext("2d");
 const TAU=Math.PI*2;
 const rad=v=>v*Math.PI/180;
@@ -228,6 +228,28 @@ function details(){
    const missing=document.createElement("p");missing.textContent="Unmeasured: "+info.not_measured.map(x=>x.dimension.replaceAll("_"," ")).join(", ")+". No physical similarity percentage is claimed.";d.append(missing);
   }
  }
+ if(state.view==="earth"){
+  const heading=document.createElement("b");heading.textContent="Mapped Earth bedrock geology";d.append(heading);
+  if(state.geologyLoading){
+    const status=document.createElement("p");status.textContent="Querying published geologic map units…";d.append(status);
+  }else if(state.geology){
+    const info=state.geology;
+    const status=document.createElement("p");status.textContent=info.status==="mapped"?
+      info.count+" mapped terrestrial geological unit(s) returned.":info.status==="no_mapped_units"?
+      "No geological unit found at this location and map scale.":
+      "Mapped geology source is unavailable; no lithology was inferred.";d.append(status);
+    for(const unit of (info.units||[]).slice(0,3)){
+      const line=document.createElement("p");
+      line.textContent=[unit.name||unit.strat_name||"Unit",unit.lith||unit.liths,
+        unit.descrip].filter(x=>typeof x==="string"&&x.trim()).join(" · ").slice(0,350);
+      if(line.textContent)d.append(line);
+    }
+    const a=document.createElement("a");a.href=info.request_url;a.rel="noopener noreferrer";a.target="_blank";
+    a.textContent="Macrostrat geologic map source";d.append(a);
+    const caution=document.createElement("p");caution.textContent=
+      "Earth map geology only. No paired planetary mineral measurements or mineralogical match is claimed.";d.append(caution);
+  }
+ }
  if(state.selected && typeof state.selected.terrain_distance==="number"){
   const ref=state.reference;
   const label=document.createElement("p");label.textContent="Measured NASA–ASTER terrain screening · lower distance = closer topographic variation. Not a physical similarity %.";d.append(label);
@@ -252,14 +274,14 @@ function details(){
 }
 function paint(){updateHeader();renderList();details();render();}
 async function loadPlanet(target){
- const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,evidence:null,evidenceLoading:false,surface:null,surfaceLoading:false,ctxMeasured:null,ctxMeasuredLoading:false,processes:null,processLoading:false,angle:-.5,pitch:.18,zoom:1});
+ const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,evidence:null,evidenceLoading:false,surface:null,surfaceLoading:false,ctxMeasured:null,ctxMeasuredLoading:false,processes:null,processLoading:false,geology:null,geologyLoading:false,angle:-.5,pitch:.18,zoom:1});
  $("location-search").value="";paint();
  try{const data=await request("/exploration/sites?body="+target);if(token!==state.token)return;state.sites=data.sites;paint();refreshLive();}
  catch(e){$("list-label").textContent="Unable to load sites: "+e.message;}
 }
 async function choose(item){
  if(state.view==="earth"){
-  state.selected=item;state.measurements=null;state.surface=null;state.processes=null;state.evidence=null;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();loadEarthMeasurements(item);loadEarthSurface(item);loadEarthProcesses(item);if(state.surveyMode==="measured")loadAnalogEvidence(item);return;
+  state.selected=item;state.measurements=null;state.surface=null;state.processes=null;state.evidence=null;state.geology=null;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();loadEarthMeasurements(item);loadEarthSurface(item);loadEarthProcesses(item);loadEarthGeology(item);if(state.surveyMode==="measured")loadAnalogEvidence(item);return;
  }
  const token=++state.token;
  state.view="earth";state.reference=null;state.selected=null;state.selectedSite=item;
@@ -277,7 +299,7 @@ async function choose(item){
    if(token!==state.token)return;
    state.surveyMode="qualitative";state.screening=data;state.reference=null;state.earth=data.results||[];
   }
-  if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);loadEarthSurface(state.earth[0]);loadEarthProcesses(state.earth[0]);if(state.surveyMode==="measured")loadAnalogEvidence(state.earth[0]);}
+  if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);loadEarthSurface(state.earth[0]);loadEarthProcesses(state.earth[0]);loadEarthGeology(state.earth[0]);if(state.surveyMode==="measured")loadAnalogEvidence(state.earth[0]);}
   if(state.earth.length){state.angle=-rad(state.earth[0].longitude);state.pitch=rad(state.earth[0].latitude);}
   paint();
  }catch(e){$("list-label").textContent="Unable to load evidence screening: "+e.message;}
@@ -357,6 +379,22 @@ async function loadEarthSurface(item){
  }
  if(seq!==state.surfaceSeq)return;
  state.surfaceLoading=false;details();
+}
+
+async function loadEarthGeology(item){
+ const seq=++state.geologySeq;
+ state.geologyLoading=true;state.geology=null;details();
+ try{
+  const result=await request("/science/earth-geology?latitude="+item.latitude+"&longitude="+item.longitude);
+  if(seq!==state.geologySeq||state.selected?.id!==item.id)return;
+  state.geology=result;
+ }catch(error){
+  if(seq!==state.geologySeq||state.selected?.id!==item.id)return;
+  state.geology={status:"upstream_unavailable",units:[],count:0,
+   request_url:"https://macrostrat.org/api/v2/geologic_units/map",error:error.message};
+ }
+ if(seq!==state.geologySeq)return;
+ state.geologyLoading=false;details();
 }
 
 async function loadEarthMeasurements(item){
