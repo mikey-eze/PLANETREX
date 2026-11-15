@@ -48,6 +48,14 @@ def check():
                     assert canvas["y"]+canvas["height"]<=region["y"]+region["height"]+2,kind+" globe clipped"
                     assert canvas["x"]>=region["x"]-2
                     assert canvas["x"]+canvas["width"]<=region["x"]+region["width"]+2
+                stages=page.locator("#stages").bounding_box()
+                sidebar=page.locator("#telemetry").bounding_box()
+                assert stages and sidebar, "Missing globe stages or information sidebar"
+                if label=="desktop":
+                    assert sidebar["x"] >= stages["x"]+stages["width"]-3, "Telemetry must be BESIDE globes"
+                    assert abs(sidebar["y"]-stages["y"])<3, "Sidebar must start level with globes"
+                else:
+                    assert sidebar["y"] >= stages["y"]+stages["height"]-3, "Mobile sidebar must follow globes"
                 page.screenshot(path=str(SHOTS/(label+"-observatory-dual.png")),full_page=True)
                 page.locator("#mode-target").click()
                 assert page.locator("#target-globe").is_visible()
