@@ -35,6 +35,12 @@ TARGET_SITES = [
     {"id": "apollo-11", "body": "moon", "name": "Tranquility Base", "lat": 0.67416, "lon": 23.47314},
     {"id": "apollo-15", "body": "moon", "name": "Hadley Rille", "lat": 26.13239, "lon": 3.63330},
     {"id": "apollo-17", "body": "moon", "name": "Taurus–Littrow", "lat": 20.1911, "lon": 30.7723},
+    {"id": "nobile-rim-1", "body": "moon", "name": "Nobile Rim 1 · NASA south-polar region reference",
+     "lat": -85.4381, "lon": 37.36667,
+     "coordinate_source": "https://ntrs.nasa.gov/api/citations/20230007818/downloads/ACD-50044%20Lunar%20Surface%20Data%20Book%20Rev%20A.pdf"},
+    {"id": "malapert-massif", "body": "moon", "name": "Malapert Massif · NASA south-polar region reference",
+     "lat": -85.9948, "lon": -0.23578,
+     "coordinate_source": "https://ntrs.nasa.gov/api/citations/20230007818/downloads/ACD-50044%20Lunar%20Surface%20Data%20Book%20Rev%20A.pdf"},
     {"id": "perseverance", "body": "mars", "name": "Jezero Crater", "lat": 18.44463, "lon": 77.45088},
     {"id": "curiosity", "body": "mars", "name": "Gale Crater", "lat": -4.6, "lon": 137.4},
     {"id": "insight", "body": "mars", "name": "Elysium Planitia", "lat": 4.5, "lon": 135.62},
@@ -50,7 +56,7 @@ OFFSETS = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1),
 def surroundings(body: str, lat: float, lon: float):
     radius = RADIUS_M[body]
     delta_lat = math.degrees(WINDOW_RADIUS_KM * 1000 / radius)
-    coslat = max(0.08, abs(math.cos(math.radians(lat))))
+    coslat = max(0.005, abs(math.cos(math.radians(lat))))
     return [(max(-89.8, min(89.8, lat + dy * delta_lat)),
              ((lon + dx * delta_lat / coslat + 180) % 360) - 180)
             for dy, dx in OFFSETS]
@@ -125,7 +131,7 @@ def planet_profiles(lola: np.ndarray, mola: np.ndarray):
             continue
         results.append({
             **target, "stats": stats,
-            "method": "9 geodesically spaced sampled elevations in a 12km-radius disk; nearest DEM pixels",
+            "method": "9 approximately geodesic sampled elevations in a 12km-radius disk; nearest DEM pixels. Polar area geometry is approximate.",
             "source_url": LOLA_INFO if target["body"] == "moon" else MOLA_INFO,
             "dataset": "LRO LOLA NASA SVS ldem_4 (4 ppd)" if target["body"] == "moon" else "MGS MOLA MEGDR topography (4 ppd)",
             "horizontal_sampling_deg": 0.25, "unit": "m",
