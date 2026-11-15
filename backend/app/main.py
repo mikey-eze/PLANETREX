@@ -7,7 +7,7 @@ import os
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes.health import router as health_router
@@ -41,6 +41,11 @@ def create_app() -> FastAPI:
     explorer_dir = Path(__file__).resolve().parent / "web"
     application.mount("/explorer-assets", StaticFiles(directory=explorer_dir), name="explorer-assets")
 
+    @application.get("/", include_in_schema=False)
+    def homepage() -> RedirectResponse:
+        """Make the public Render domain open the explorer directly."""
+        return RedirectResponse(url="/explorer", status_code=307)
+
     @application.get("/explorer", include_in_schema=False)
     def explorer() -> FileResponse:
         """Dependency-free browser fallback, served by FastAPI."""
@@ -53,7 +58,7 @@ def create_app() -> FastAPI:
             await asyncio.sleep(3)
             port = os.environ.get("PORT", "10000")
             paths = [
-                "/health", "/explorer", "/explorer-assets/explorer.js",
+                "/", "/health", "/explorer", "/explorer-assets/explorer.js",
                 "/exploration/sites?body=moon", "/science/profiles?body=earth",
                 "/scientific/earth-events?limit=5",
                 "/scientific/planetary-products?target=moon&limit=5",
