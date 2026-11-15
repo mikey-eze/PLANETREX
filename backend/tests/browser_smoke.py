@@ -31,7 +31,7 @@ def main():
         for _ in range(55):
             if server_ready():break
             if server.poll() is not None:
-                raise RuntimeError("Backend exited before browser test")
+                raise RuntimeError("Backend exited before browser test: "+(server.stderr.read().decode("utf-8","replace")[-3000:] if server.stderr else "stderr unavailable"))
             time.sleep(0.4)
         else:
             raise TimeoutError("Backend failed to become ready")
