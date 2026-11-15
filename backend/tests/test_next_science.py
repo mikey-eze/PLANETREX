@@ -58,3 +58,19 @@ def test_earth_candidate_not_found_no_fabricated_evidence():
         "body":"mars","site_id":"perseverance","earth_id":"not-a-record"
     })
     assert response.status_code==404
+
+
+def test_report_contains_ranking_weight_sensitivity_not_false_confidence():
+    data=read_dataset()
+    earth=data["screenings"]["mars:perseverance"][0]
+    response=client.get("/science/analog-evidence",params={
+        "body":"mars","site_id":"perseverance","earth_id":earth["id"]
+    })
+    assert response.status_code==200
+    report=response.json()
+    sensitivity=report["terrain_rank_sensitivity"]
+    assert sensitivity["uncertainty_type"]=="method_weight_sensitivity_only"
+    assert sensitivity["calibrated_statistical_confidence"] is None
+    assert 1<=sensitivity["best_rank_in_shortlist"]<=sensitivity["worst_rank_in_shortlist"]<=15
+    assert len(sensitivity["results"])==5
+    assert all(row["distance"]>=0 for row in sensitivity["results"])
