@@ -41,7 +41,7 @@ def subset_group(payload:dict)->dict[str,dict]:
         data=row.get("data")
         if not isinstance(band,str) or not isinstance(date,str) or not isinstance(data,list) or len(data)!=ncols*nrows:
             continue
-        # Midpoint of explicitly requested single-pixel region, or center pixel
+        # Midpoint of explicitly requested requested small region, or center pixel
         val=data[(nrows//2)*ncols+(ncols//2)]
         result.setdefault(date,{})[band]=val
     return result
@@ -83,7 +83,7 @@ async def fetch_surface(latitude:float,longitude:float)->dict:
     async with httpx.AsyncClient(follow_redirects=True,timeout=25.0) as client:
         res=await client.get(f"{BASE}/{SOURCE_PRODUCT}/subset",params={
           "latitude":round(latitude,5),"longitude":round(longitude,5),
-          "startDate":START,"endDate":END,"kmAboveBelow":0,"kmLeftRight":0
+          "startDate":START,"endDate":END,"kmAboveBelow":1,"kmLeftRight":1
         },headers={"Accept":"application/json"})
         res.raise_for_status()
         payload=res.json()
@@ -112,6 +112,8 @@ async def earth_surface(
         return {**found[1],"cache_status":"cached"}
     try:
         record=await fetch_surface(*key)
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(502, f"NASA MODIS source returned HTTP {exc.response.status_code}") from exc
     except (httpx.HTTPError,ValueError) as exc:
         raise HTTPException(502,f"NASA MODIS subset retrieval failed: {type(exc).__name__}") from exc
     if len(CACHE)>=MAX_CACHE:CACHE.pop(next(iter(CACHE)))
