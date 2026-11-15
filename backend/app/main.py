@@ -64,6 +64,8 @@ def create_app() -> FastAPI:
                 "/exploration/sites?body=moon", "/science/profiles?body=earth",
                 "/science/analog-screening?body=moon&site_id=apollo-15",
                 "/science/analog-screening?body=mars&site_id=perseverance",
+                "/scientific/nasa-imagery?target=moon&limit=5",
+                "/scientific/nasa-imagery?target=mars&limit=5",
                 "/scientific/earth-events?limit=5",
                 "/scientific/planetary-products?target=moon&limit=5",
                 "/scientific/planetary-products?target=mars&limit=5",
@@ -73,9 +75,9 @@ def create_app() -> FastAPI:
                 for path in paths:
                     try:
                         response = await client.get(path)
-                        if "/scientific/" in path and response.status_code == 200:
+                        if ("/scientific/" in path or "/analog-screening" in path) and response.status_code == 200:
                             payload = response.json()
-                            records = payload.get("events", payload.get("products", []))
+                            records = payload.get("events", payload.get("products", payload.get("results", [])))
                             logger.warning("PROBE_DATA %s count=%d records=%s",
                                            path, len(records),
                                            repr([{"id": item.get("id"), "title": item.get("title")}
