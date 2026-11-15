@@ -1,7 +1,7 @@
 "use strict";
 // Moon-first interactive research viewer. Navigation sites are not similarity claims.
 const $=id=>document.getElementById(id);
-const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative"};
+const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0};
 const canvas=$("globe"),ctx=canvas.getContext("2d");
 const TAU=Math.PI*2;
 const rad=v=>v*Math.PI/180;
@@ -128,7 +128,21 @@ function details(){
    const location=document.createElement("p");location.textContent="Planetary location: "+state.selectedSite.name;d.append(location);
   }
  }
- if(state.view==="earth"){
+ if(state.view==="earth" && state.target==="mars"){
+  const h=document.createElement("b");h.textContent="NASA MRO CTX · High-resolution Mars terrain";d.append(h);
+  if(state.mroLoading){
+   const p=document.createElement("p");p.textContent="Checking MRO CTX stereo coverage…";d.append(p);
+  }else if(state.mro){
+   const p=document.createElement("p");p.textContent=state.mro.count+" published stereo DTM footprint(s) found near "+state.mro.site_name+
+     ". Catalogue only — not used in the score.";d.append(p);
+   for(const item of (state.mro.products||[]).slice(0,3)){
+    const a=document.createElement("a");a.href=item.source_url;a.target="_blank";a.rel="noopener noreferrer";
+    a.textContent=(item.title||item.id).slice(0,65);d.append(a,document.createElement("div"));
+   }
+   const x=document.createElement("p");x.textContent="20m-post CTX stereo models exist in this archive, but individual elevations and quality masks are not yet harmonized into our ranking.";d.append(x);
+  }
+ }
+  if(state.view==="earth"){
   const heading=document.createElement("b");heading.textContent="Measured Earth observations";d.append(heading);
   if(!state.selected){const help=document.createElement("p");help.textContent="Select an Earth candidate to load NASA POWER and Copernicus DEM observations.";d.append(help);}
   else if(state.measureLoading){const help=document.createElement("p");help.textContent="Retrieving independently sourced Earth measurements…";d.append(help);}
@@ -170,7 +184,7 @@ function details(){
 }
 function paint(){updateHeader();renderList();details();render();}
 async function loadPlanet(target){
- const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",angle:-.5,pitch:.18,zoom:1});
+ const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,angle:-.5,pitch:.18,zoom:1});
  $("location-search").value="";paint();
  try{const data=await request("/exploration/sites?body="+target);if(token!==state.token)return;state.sites=data.sites;paint();refreshLive();}
  catch(e){$("list-label").textContent="Unable to load sites: "+e.message;}
@@ -181,7 +195,9 @@ async function choose(item){
  }
  const token=++state.token;
  state.view="earth";state.reference=null;state.selected=null;state.selectedSite=item;
- state.screening=null;state.earth=[];$("location-search").value="";paint();
+ state.screening=null;state.earth=[];state.mro=null;state.mroLoading=state.target==="mars";
+ $("location-search").value="";paint();
+ if(state.target==="mars")loadMROContext(item);
  try{
   const measured=await request("/science/terrain-survey/candidates?body="+state.target+"&site_id="+encodeURIComponent(item.id));
   if(token!==state.token)return;
@@ -197,6 +213,21 @@ async function choose(item){
   if(state.earth.length){state.angle=-rad(state.earth[0].longitude);state.pitch=rad(state.earth[0].latitude);}
   paint();
  }catch(e){$("list-label").textContent="Unable to load evidence screening: "+e.message;}
+}
+
+async function loadMROContext(site){
+ const seq=++state.mroSeq;
+ state.mro=null;state.mroLoading=true;details();
+ try{
+  const data=await request("/science/mro-ctx?site_id="+encodeURIComponent(site.id)+"&limit=5");
+  if(seq!==state.mroSeq || state.selectedSite?.id!==site.id)return;
+  state.mro=data;
+ }catch(e){
+  if(seq!==state.mroSeq)return;
+  state.mro={count:0,products:[],site_name:site.name,error:e.message};
+ }
+ if(seq!==state.mroSeq)return;
+ state.mroLoading=false;details();
 }
 
 async function loadEarthMeasurements(item){
@@ -302,9 +333,9 @@ async function checkGlobalTerrainSurvey(){
  try{
   const survey=await request("/science/terrain-survey/status");
   if(survey.ready){
-   const c=survey.global_scan;
+   const c=survey.global_scan, refinement=survey.refinement;
    el.classList.remove("error");
-   el.textContent="Measured DEM survey ready · "+c.cells_with_terrain_coverage+" Earth candidate cells with terrain measurements / "+c.grid_cells_attempted+" systematically screened worldwide · "+survey.planetary_reference_count+" measured Moon/Mars reference footprints · built "+new Date(survey.built_at).toLocaleString()+".";
+   el.textContent="Measured DEM survey ready · "+c.cells_with_terrain_coverage+" Earth candidate cells with terrain measurements / "+c.grid_cells_attempted+" systematically screened worldwide · "+survey.planetary_reference_count+" measured Moon/Mars reference footprints"+(refinement?" · "+refinement.usable_cells+" refined Earth candidate cells":"")+" · built "+new Date(survey.built_at).toLocaleString()+".";
   }else{
    el.classList.add("error");
    el.textContent="The measurement batch has not been published yet. Descriptive geological screening remains available; no invented terrain results are shown.";
