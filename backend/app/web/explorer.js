@@ -225,6 +225,15 @@ function details(){
    }
    const mismatch=document.createElement("p");mismatch.textContent="Key mismatches: "+Object.values(info.where_analogy_breaks_down.physical_environment_mismatches).join(" ");d.append(mismatch);
    const task=document.createElement("p");task.textContent="Potential research use: "+info.possible_research_use;d.append(task);
+   const robustness=info.terrain_rank_sensitivity;
+   if(robustness){
+     const p=document.createElement("p");
+     p.textContent="Ranking sensitivity: position "+robustness.best_rank_in_shortlist+
+      "–"+robustness.worst_rank_in_shortlist+
+      " among the displayed shortlist as relief weight varies from 30% to 70%. "+
+      "This is weight sensitivity, NOT a scientific confidence interval.";
+     d.append(p);
+   }
    const missing=document.createElement("p");missing.textContent="Unmeasured: "+info.not_measured.map(x=>x.dimension.replaceAll("_"," ")).join(", ")+". No physical similarity percentage is claimed.";d.append(missing);
   }
  }
