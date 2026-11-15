@@ -14,16 +14,16 @@
 <div class="list-label" id="list-label">LOADING</div><div class="locations" id="locations" aria-live="polite"></div>
 <div class="details" id="details"><b>Scientific evidence</b><p>Select a planetary region to inspect available scientific profiles.</p></div></aside></main>
 <section class="live-panel" id="nasa-live" aria-labelledby="live-title">
-  <div class="live-top"><div><div class="eyebrow">CONNECTED SCIENTIFIC SOURCES</div><h2 id="live-title">Live NASA Data</h2><p>Fetched on demand from NASA APIs. Real events and archive metadata, not computed Earth–Moon/Mars analog scores.</p></div>
+  <div class="live-top"><div><div class="eyebrow">CONNECTED SCIENTIFIC SOURCES</div><h2 id="live-title">Live NASA Data</h2><p>Fresh Earth event data and target-specific NASA planetary imagery. Earth analog percentages are independently sourced geological descriptor overlap, not validated physical similarity.</p></div>
    <div class="live-actions"><button id="refresh-live" type="button">↻ Refresh from NASA</button><span id="live-state" role="status" aria-live="polite">Not loaded</span></div></div>
   <div class="live-grid">
    <article><h3>Earth · EONET <span class="api-pill">NASA</span></h3><p class="live-note">Current and recent curated natural events, sourced from EONET v3.</p>
     <p id="earth-source-status" class="api-status">Connecting…</p><div id="earth-events" class="live-results"></div>
     <a href="https://eonet.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA EONET source</a>
    </article>
-   <article><h3 id="pds-title">Moon · PDS <span class="api-pill">NASA</span></h3><p class="live-note">Planetary Data System archive product metadata; no invented temperature or similarity values.</p>
+   <article><h3 id="pds-title">Moon · NASA Image Library <span class="api-pill">NASA</span></h3><p class="live-note">Target-specific NASA mission imagery and metadata; no invented measurements.</p>
     <p id="pds-source-status" class="api-status">Connecting…</p><div id="pds-products" class="live-results"></div>
-    <a href="https://pds.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA Planetary Data System</a>
+    <a href="https://images.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA Image &amp; Video Library</a>
    </article>
   </div>
  <p class="source-credit">Surface textures: Solar System Scope, based on NASA imagery, CC BY 4.0. Visual orientation is illustrative, not a georeferenced scientific map. <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noopener noreferrer">Texture attribution</a>.</p>
