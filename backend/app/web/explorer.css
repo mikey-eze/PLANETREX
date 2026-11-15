@@ -56,3 +56,9 @@ body{height:auto;min-height:100vh;overflow-y:auto}
 @media(max-width:800px){.live-grid{grid-template-columns:minmax(0,1fr)}}
 .details small{color:#99aec0;display:inline-block;line-height:1.5}
 .details p{margin:9px 0}
+
+.survey-panel{padding:24px clamp(16px,4vw,56px) 50px;background:#0a1524;border-top:1px solid #294a65}
+.survey-info{max-width:1080px}.survey-info h2{font-size:clamp(21px,2.2vw,29px);margin:8px 0 10px}
+.survey-info>p{color:#bed0df;max-width:920px}
+.survey-sources{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
+.survey-sources a{color:#99d4f5;font-size:12px;text-decoration:underline}
