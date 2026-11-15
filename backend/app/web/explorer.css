@@ -62,3 +62,18 @@ body{height:auto;min-height:100vh;overflow-y:auto}
 .survey-info>p{color:#bed0df;max-width:920px}
 .survey-sources{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
 .survey-sources a{color:#99d4f5;font-size:12px;text-decoration:underline}
+
+/* Research-evidence completeness: compact, readable, not an inflated similarity score. */
+.coverage-panel{background:#0b1827;border-top:1px solid #253c51;padding:36px clamp(16px,4vw,56px) 56px}
+.coverage-wrap{max-width:1120px;margin:auto}
+.coverage-wrap h2{font-size:clamp(21px,2.5vw,30px);margin:6px 0 10px}
+.coverage-wrap>p{color:#b4c7d7;max-width:940px;line-height:1.6}
+.coverage-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:22px}
+.coverage-row{border:1px solid #27405b;background:#0e2032;border-radius:8px;padding:18px;min-width:0}
+.coverage-row b{display:block;font-size:14px;margin-bottom:8px}
+.coverage-status{display:inline-block;font-size:11px;font-weight:650;margin-bottom:5px}
+.coverage-status.measured{color:#91e0bc}
+.coverage-status.missing{color:#c1cbd4}
+.coverage-row p{color:#a1b5c5;font-size:12px;line-height:1.5;margin:5px 0 10px}
+.coverage-row a{color:#9edcff;font-size:12px;text-decoration:underline}
+@media(max-width:670px){.coverage-rows{grid-template-columns:1fr}}
