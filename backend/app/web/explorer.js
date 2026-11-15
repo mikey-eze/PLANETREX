@@ -1,7 +1,7 @@
 "use strict";
 // Moon-first interactive research viewer. Navigation sites are not similarity claims.
 const $=id=>document.getElementById(id);
-const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0};
+const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null};
 const canvas=$("globe"),ctx=canvas.getContext("2d");
 const TAU=Math.PI*2;
 const rad=v=>v*Math.PI/180;
@@ -90,7 +90,7 @@ function render(){
   visible.push({loc,x,y});}
  ctx.font="12px system-ui";ctx.textBaseline="middle";
  for(const item of visible.slice(0,10)){let x=item.x+10,y=item.y;if(x+130>w)x=item.x-128;
-  ctx.fillStyle="#e7f3ff";ctx.fillText(item.loc.name.slice(0,23),x,y,130);}
+  ctx.fillStyle="#e7f3ff";ctx.fillText((item.loc.name+(typeof item.loc.tag_overlap_percent==="number"?" · "+item.loc.tag_overlap_percent+"%":"")).slice(0,34),x,y,152);}
  state.hits=visible;
 }
 function updateHeader(){
@@ -100,21 +100,21 @@ function updateHeader(){
  $("globe-name").textContent=planet?name.toUpperCase():"EARTH";
  $("mode-label").textContent=planet?"SELECT A "+(state.target==="moon"?"LUNAR":"MARTIAN")+" REGION":name.toUpperCase()+" → EARTH";
  $("page-heading").textContent=planet?"Explore "+(state.target==="moon"?"the Moon":"Mars"):"Earth counterparts";
- $("page-subtitle").textContent=planet?"Select one of the documented locations or rotate the globe.":"Only stored, measured Earth profiles appear below. Unassessed grid cells are not analog matches.";
- $("side-title").textContent=planet?name+" mission sites":"Stored Earth locations";
- $("side-type").textContent=planet?"DOCUMENTED NAVIGATION SITES":"MEASURED EARTH PROFILES";
- $("side-description").textContent=planet?"Select a named landing site, or click a region on the globe.":"Scientific rankings require a measured planetary reference.";
+ $("page-subtitle").textContent=planet?"Select one of the documented locations or rotate the globe.":"Evidence-linked Earth analog screening · descriptive feature overlap, not physical similarity.";
+ $("side-title").textContent=planet?name+" mission sites":"Earth analog candidates";
+ $("side-type").textContent=planet?"DOCUMENTED NAVIGATION SITES":"PRELIMINARY FEATURE MATCHES";
+ $("side-description").textContent=planet?"Select a named landing site, or click a region on the globe.":"Percentages compare documented feature tags only, not measured geophysical similarity.";
  $("back-button").classList.toggle("hidden",planet);
 }
 function renderList(){
  const list=$("locations");list.replaceChildren();
  const q=$("location-search").value.toLowerCase();
  const matches=points().filter(x=>x.name.toLowerCase().includes(q));
- $("list-label").textContent=matches.length+" "+(state.view==="planet"?"NAVIGATION SITES":"EARTH PROFILES");
- if(!matches.length){const p=document.createElement("p");p.className="empty";p.textContent=state.view==="earth"?"No processed Earth profiles yet. The discovery pipeline must run first.":"No matching sites.";list.append(p);}
+ $("list-label").textContent=matches.length+" "+(state.view==="planet"?"NAVIGATION SITES":"EVIDENCE-SCREENED CANDIDATES");
+ if(!matches.length){const p=document.createElement("p");p.className="empty";p.textContent=state.view==="earth"?(state.screening?.message||"No evidenced matches for this location."):"No matching sites.";list.append(p);}
  matches.forEach((item,i)=>{const b=document.createElement("button");b.type="button";b.className="location";if(state.selected?.id===item.id)b.classList.add("selected");
  const info=document.createElement("span"),title=document.createElement("b"),sub=document.createElement("small");
- title.textContent=item.name;sub.textContent=(item.mission?item.mission+" · ":"")+fmt(item);info.append(title,sub);b.append(info);const num=document.createElement("small");num.textContent=String(i+1).padStart(2,"0");b.append(num);
+ title.textContent=item.name;sub.textContent=(item.mission?item.mission+" · ":"")+fmt(item)+(typeof item.tag_overlap_percent==="number"?" · "+item.tag_overlap_percent+"% tag overlap":"");info.append(title,sub);b.append(info);const num=document.createElement("small");num.textContent=typeof item.tag_overlap_percent==="number"?item.tag_overlap_percent+"%":String(i+1).padStart(2,"0");b.append(num);
  b.addEventListener("click",()=>choose(item));list.append(b);});
 }
 function details(){
@@ -122,25 +122,44 @@ function details(){
  const p=document.createElement("p");
  p.textContent=state.view==="planet"?"Navigation markers show documented site locations, not scientific matches.":state.reference?"Measured reference: "+state.reference.name:"No measured Moon/Mars reference profile is available for this location. Similarity percentages are unavailable.";
  d.append(p);
+ if(state.view==="earth" && state.screening){
+  const summary=document.createElement("p");summary.textContent=state.screening.percent_meaning||"";d.append(summary);
+  if(state.selectedSite){
+   const location=document.createElement("p");location.textContent="Planetary location: "+state.selectedSite.name;d.append(location);
+  }
+ }
+ if(state.selected && typeof state.selected.tag_overlap_percent==="number"){
+  const score=document.createElement("p");score.textContent=state.selected.tag_overlap_percent+"% documented feature-tag overlap · "+state.selected.overlap_fraction+" shared/total features";d.append(score);
+  const matched=document.createElement("p");matched.textContent="Shared features: "+state.selected.matching_features.join(", ");d.append(matched);
+  const caveat=document.createElement("p");caveat.textContent="NOT a measured scientific similarity percentage.";d.append(caveat);
+  for(const url of [state.selected.reference_source_url,state.selected.earth_source_url]){
+   if(url?.startsWith("https://")){const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent="View evidence source";d.append(a,document.createTextNode("  "));}
+  }
+ }
  if(state.selected){const v=document.createElement("p");v.textContent="Earth location: "+state.selected.name+" ("+fmt(state.selected)+")";d.append(v);
   if(state.selected.features){for(const [key,value] of Object.entries(state.selected.features)){const r=document.createElement("p");r.textContent=key+": "+value.value+" "+value.unit;d.append(r);}}}
 }
 function paint(){updateHeader();renderList();details();render();}
 async function loadPlanet(target){
- const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1});
+ const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,angle:-.5,pitch:.18,zoom:1});
  $("location-search").value="";paint();
  try{const data=await request("/exploration/sites?body="+target);if(token!==state.token)return;state.sites=data.sites;paint();refreshLive();}
  catch(e){$("list-label").textContent="Unable to load sites: "+e.message;}
 }
 async function choose(item){
- if(state.view==="earth"){state.selected=item;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();return;}
- const token=++state.token;state.view="earth";state.reference=null;state.selected=null;state.earth=[];$("location-search").value="";paint();
+ if(state.view==="earth"){
+  state.selected=item;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();return;
+ }
+ const token=++state.token;
+ state.view="earth";state.reference=null;state.selected=null;state.selectedSite=item;
+ state.screening=null;state.earth=[];$("location-search").value="";paint();
  try{
-  const [planet,earth]=await Promise.all([request("/science/profiles?body="+state.target+"&limit=200"),request("/science/profiles?body=earth&limit=200")]);
+  const data=await request("/science/analog-screening?body="+state.target+"&site_id="+encodeURIComponent(item.id));
   if(token!==state.token)return;
-  state.reference=planet.profiles.find(p=>Math.abs(p.latitude-item.latitude)<.1&&Math.abs(p.longitude-item.longitude)<.1)||null;
-  state.earth=earth.profiles;paint();
- }catch(e){$("list-label").textContent="Unable to load profiles: "+e.message;}
+  state.screening=data;state.earth=data.results||[];
+  if(state.earth.length){state.angle=-rad(state.earth[0].longitude);state.pitch=rad(state.earth[0].latitude);}
+  paint();
+ }catch(e){$("list-label").textContent="Unable to load evidence screening: "+e.message;}
 }
 $("moon-tab").addEventListener("click",()=>loadPlanet("moon"));$("mars-tab").addEventListener("click",()=>loadPlanet("mars"));
 $("back-button").addEventListener("click",()=>loadPlanet(state.target));$("reset-button").addEventListener("click",()=>{state.angle=-.5;state.pitch=.18;state.zoom=1;render()});
@@ -169,12 +188,12 @@ async function refreshLive(){
  const seq=++liveRequestCounter,button=$("refresh-live");button.disabled=true;
  putText("live-state","Contacting NASA...");
  putText("earth-source-status","Requesting current NASA EONET events...");
- putText("pds-source-status","Requesting "+state.target.toUpperCase()+" NASA PDS products...");
- $("pds-title").textContent=(state.target==="moon"?"Moon":"Mars")+" · PDS";
+ putText("pds-source-status","Requesting "+state.target.toUpperCase()+" NASA imagery archive...");
+ $("pds-title").textContent=(state.target==="moon"?"Moon":"Mars")+" · NASA Image Library";
  $("earth-events").replaceChildren();$("pds-products").replaceChildren();
  const outcomes=await Promise.allSettled([
   request("/scientific/earth-events?limit=30"),
-  request("/scientific/planetary-products?target="+state.target+"&limit=12")
+  request("/scientific/nasa-imagery?target="+state.target+"&limit=12")
  ]);
  if(seq!==liveRequestCounter)return;
  const [earth,pds]=outcomes;
@@ -198,12 +217,12 @@ async function refreshLive(){
   const payload=pds.value;liveData.pds=payload.products||[];
   putText("pds-source-status",liveData.pds.length+" archive record(s) · retrieved "+new Date(payload.retrieved_at).toLocaleString());
   const node=$("pds-products");if(!liveData.pds.length)addResult(node,"No indexed products returned","NASA PDS responded with no products for this request.");
-  for(const p of liveData.pds.slice(0,12))addResult(node,p.title,p.id+" · "+p.product_class,"Search source archive",p.source_url);
+  for(const p of liveData.pds.slice(0,12))addResult(node,p.title,p.id+" · "+(p.date_created||"Date unknown"),"View NASA source",p.source_url);
  }else{
-  putText("pds-source-status","NASA PDS unavailable: "+pds.reason.message,true);
-  addResult($("pds-products"),"NASA PDS request failed","No fabricated planetary measurements; source remains available via the link below.");
+  putText("pds-source-status","NASA imagery unavailable: "+pds.reason.message,true);
+  addResult($("pds-products"),"NASA imagery request failed","No fabricated planetary measurements; source remains available via the link below.");
  }
- putText("live-state",successes+"/2 live sources responding");
+ putText("live-state",successes+"/2 live NASA sources responding");
  button.disabled=false;
 }
 $("refresh-live").addEventListener("click",refreshLive);
