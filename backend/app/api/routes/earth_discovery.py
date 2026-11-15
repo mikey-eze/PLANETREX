@@ -16,16 +16,18 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Query
 from app.api.routes.terrain_survey import read_dataset
 from app.pipeline.earth_deep_scan import fetch_power, fetch_geology
+from app.api.routes.planetary_context import rock_alignment
 
 router=APIRouter(prefix="/science",tags=["Global multi-source Earth analog discovery"])
 FIELD_FILE=Path(__file__).resolve().parents[4]/"data"/"earth_science_profiles.json"
-EARTH_FILTER=Literal["all","dry","cold","windy","sunny","geology","rugged"]
+EARTH_FILTER=Literal["all","dry","cold","windy","sunny","geology","lithology","rugged"]
 FIELDS={
  "dry":{"field":"precipitation_annual_mm","check":"< 250 mm during 2025", "source":"NASA POWER"},
  "cold":{"field":"air_temperature_mean_c","check":"< 0 °C 2025 annual mean", "source":"NASA POWER"},
  "windy":{"field":"wind_10m_mean_ms","check":"> 6 m/s 2025 annual mean", "source":"NASA POWER"},
  "sunny":{"field":"solar_shortwave_mean_kwh_m2_day","check":"> 5 kWh/m²/day 2025 mean", "source":"NASA POWER"},
  "geology":{"field":"geology","check":"geological map units present", "source":"Macrostrat"},
+ "lithology":{"field":"lithology","check":"mapped Earth rock class corresponds to a documented site-specific NASA/USGS geology description", "source":"Macrostrat and NASA/USGS"},
  "rugged":{"field":"relief_m","check":">= 1000 m local terrain relief", "source":"NASA/METI ASTER"},
 }
 
@@ -75,12 +77,17 @@ def rank_global(data:dict,body:str,site_id:str)->tuple[dict,list[dict]]:
     rows.sort(key=lambda r:(r["terrain_distance"],r["latitude"],r["longitude"]))
     return ref,rows
 
-def earth_match_filter(row:dict,profile:dict|None,environment:str)->bool:
+def earth_match_filter(row:dict,profile:dict|None,environment:str,
+                       body:str="",site_id:str="")->bool:
     if environment=="all":return True
     if environment=="rugged":return row["stats"]["relief_m"]>=1000
     if profile is None:return False
     if environment=="geology":
         return bool(profile.get("earth_measurements",{}).get("geology",{}).get("units"))
+    if environment=="lithology":
+        rock=rock_alignment(body,site_id,
+             profile.get("earth_measurements",{}).get("geology",{}).get("units",[]))
+        return rock["categorical_correspondence"] is True
     power=profile.get("earth_measurements",{}).get("power_annual",{})
     field=FIELDS[environment]["field"]
     item=power.get(field,{})
@@ -114,11 +121,13 @@ def earth_discovery(body:Literal["moon","mars"],site_id:str,
     ref,ranked=rank_global(data,body,site_id)
     field=read_field_profiles()
     profiles={x["id"]:x for x in field.get("profiles",[])}
-    subset=[x for x in ranked if earth_match_filter(x,profiles.get(x["id"]),environment)]
+    subset=[x for x in ranked if earth_match_filter(x,profiles.get(x["id"]),environment,body,site_id)]
     shortlisted=[]
     for row in subset[:limit]:
         p=profiles.get(row["id"])
+        geologic_units=(p or {}).get("earth_measurements",{}).get("geology",{}).get("units",[])
         shortlisted.append({**row,"earth_evidence":summarize_earth_profile(p),
+                            "planetary_geology_evidence":rock_alignment(body,site_id,geologic_units),
                             "earth_evidence_supported":p is not None and bool(p.get("earth_measurements"))})
     return {"ready":True,"planetary_reference":ref,
             "body":body,"site_id":site_id,
