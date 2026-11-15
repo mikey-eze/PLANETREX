@@ -24,7 +24,7 @@ jobs:
       - name: Check real desktop and mobile browser interactions
         run: cd backend && python tests/browser_smoke.py
         env:
-          APP_ENV: testing
+          APP_ENV: test
           PLAYWRIGHT_SCREENSHOTS: ${{ github.workspace }}/browser-shots
       - name: Save actual screenshots
         if: always()
