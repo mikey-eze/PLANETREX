@@ -17,6 +17,7 @@ from app.config import get_settings
 from app.api.routes.profiles import router as profiles_router
 from app.api.routes.sites import router as sites_router
 from app.api.routes.analog_screening import router as analog_screening_router
+from app.api.routes.earth_measurements import router as earth_measurements_router
 
 
 def create_app() -> FastAPI:
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     application.include_router(profiles_router)
     application.include_router(sites_router)
     application.include_router(analog_screening_router)
+    application.include_router(earth_measurements_router)
     explorer_dir = Path(__file__).resolve().parent / "web"
     application.mount("/explorer-assets", StaticFiles(directory=explorer_dir), name="explorer-assets")
 
@@ -66,6 +68,8 @@ def create_app() -> FastAPI:
                 "/science/analog-screening?body=mars&site_id=perseverance",
                 "/scientific/nasa-imagery?target=moon&limit=5",
                 "/scientific/nasa-imagery?target=mars&limit=5",
+                "/science/earth-environment?latitude=19.4069&longitude=-155.2834",
+                "/science/earthdata-catalog?keyword=elevation&limit=3",
                 "/scientific/earth-events?limit=5",
                 "/scientific/planetary-products?target=moon&limit=5",
                 "/scientific/planetary-products?target=mars&limit=5",
@@ -75,13 +79,13 @@ def create_app() -> FastAPI:
                 for path in paths:
                     try:
                         response = await client.get(path)
-                        if ("/scientific/" in path or "/analog-screening" in path) and response.status_code == 200:
+                        if ("/scientific/" in path or "/analog-screening" in path or "/earth-environment" in path or "/earthdata-catalog" in path) and response.status_code == 200:
                             payload = response.json()
-                            records = payload.get("events", payload.get("products", payload.get("results", [])))
-                            logger.warning("PROBE_DATA %s count=%d records=%s",
+                            records = payload.get("events", payload.get("products", payload.get("results", payload.get("collections", []))))
+                            logger.warning("PROBE_DATA %s count=%d records=%s status=%s sources=%s",
                                            path, len(records),
                                            repr([{"id": item.get("id"), "title": item.get("title")}
-                                                 for item in records[:3]])[:700])
+                                                 for item in records[:3]])[:700], payload.get("status"), payload.get("source_count"))
                         logger.warning("PROBE %s HTTP %d bytes=%d sample=%s",
                                        path, response.status_code, len(response.content),
                                        response.text[:110].replace(chr(10), " "))
