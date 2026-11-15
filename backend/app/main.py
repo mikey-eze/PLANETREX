@@ -7,7 +7,8 @@ import os
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi import HTTPException
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes.health import router as health_router
@@ -65,6 +66,37 @@ def create_app() -> FastAPI:
     def homepage() -> RedirectResponse:
         """Make the public Render domain open the explorer directly."""
         return RedirectResponse(url="/observatory", status_code=307)
+
+    # Same-origin texture bytes permit smooth per-pixel sphere projection in Canvas.
+    # Only these three explicitly licensed Solar System Scope CC BY 4.0 assets
+    # can be requested; this is not an arbitrary internet proxy.
+    texture_urls = {
+        "moon": "https://www.solarsystemscope.com/textures/download/2k_moon.jpg",
+        "mars": "https://www.solarsystemscope.com/textures/download/2k_mars.jpg",
+        "earth": "https://www.solarsystemscope.com/textures/download/2k_earth_daymap.jpg",
+    }
+    texture_cache: dict[str, bytes] = {}
+    texture_locks = {body: asyncio.Lock() for body in texture_urls}
+
+    @application.get("/visual/texture/{body}.jpg", include_in_schema=False)
+    async def visual_texture(body: str) -> Response:
+        url = texture_urls.get(body)
+        if url is None:
+            raise HTTPException(status_code=404, detail="Unknown planet texture")
+        async with texture_locks[body]:
+            if body not in texture_cache:
+                try:
+                    async with httpx.AsyncClient(timeout=35.0, follow_redirects=True) as client:
+                        result = await client.get(url)
+                        result.raise_for_status()
+                    content = result.content
+                    if not content.startswith(b"\\xff\\xd8\\xff") or not 100000 < len(content) < 12000000:
+                        raise ValueError("Upstream texture is not a valid-size JPEG")
+                    texture_cache[body] = content
+                except (httpx.HTTPError, ValueError) as exc:
+                    raise HTTPException(status_code=502, detail="Source texture unavailable") from exc
+        return Response(content=texture_cache[body], media_type="image/jpeg",
+                        headers={"Cache-Control": "public, max-age=86400"})
 
     @application.get("/observatory", include_in_schema=False)
     def observatory() -> FileResponse:
