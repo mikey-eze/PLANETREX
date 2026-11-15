@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'backend/app/pipeline/terrain_batch.py'
+      - 'backend/app/pipeline/terrain_refine.py'
       - '.github/workflows/terrain-batch.yml'
   workflow_dispatch:
 permissions:
@@ -21,6 +22,8 @@ jobs:
         run: python -m pip install httpx numpy tifffile
       - name: Fetch NASA LOLA and MOLA DEMs; sample global ASTER Earth grid
         run: cd backend && python -m app.pipeline.terrain_batch --output ../data/terrain_survey.json
+      - name: Refine candidate search using independent ASTER Earth windows
+        run: cd backend && python -m app.pipeline.terrain_refine --input ../data/terrain_survey.json --output ../data/terrain_survey.json
       - name: Inspect produced scientific evidence
         run: |
           python - <<'PY'
@@ -29,12 +32,16 @@ jobs:
           assert d['nasa_datasets']['moon']['sha256']
           assert d['nasa_datasets']['mars']['sha256']
           assert d['global_scan']['cells_with_terrain_coverage'] >= 5
+          assert d['refinement']['attempted_cells'] >= 8
+          assert d['refinement']['usable_cells'] >= 8
+          assert d['scientific_status'] == 'coarse_to_fine_two_feature_topographic_screening'
           assert any(x['body']=='moon' for x in d['planetary_references'])
           assert any(x['body']=='mars' for x in d['planetary_references'])
           assert all(x.get('scientific_similarity_percent') is None
                      for rows in d['screenings'].values() for x in rows)
           print('Measured source DEM references:', len(d['planetary_references']))
           print('Real Earth regions characterized:',d['global_scan']['cells_with_terrain_coverage'])
+          print('Refined Earth candidate regions:',d['refinement']['usable_cells'])
           PY
       - name: Publish versioned batch results to repository
         run: |
