@@ -1,7 +1,7 @@
 "use strict";
 // Moon-first interactive research viewer. Navigation sites are not similarity claims.
 const $=id=>document.getElementById(id);
-const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0,evidence:null,evidenceLoading:false,evidenceSeq:0};
+const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0,evidence:null,evidenceLoading:false,evidenceSeq:0,surface:null,surfaceLoading:false,surfaceSeq:0};
 const canvas=$("globe"),ctx=canvas.getContext("2d");
 const TAU=Math.PI*2;
 const rad=v=>v*Math.PI/180;
@@ -160,6 +160,24 @@ function details(){
    const warning=document.createElement("p");warning.textContent="These are real Earth measurements. A physically measured Moon/Mars comparison is not yet available.";d.append(warning);
   }
  }
+ if(state.view==="earth"){
+   const h=document.createElement("b");h.textContent="NASA MODIS · measured Earth surface temperatures";d.append(h);
+   if(state.surfaceLoading){const p=document.createElement("p");p.textContent="Retrieving quality-screened MODIS observations…";d.append(p);}
+   else if(state.surface){
+     if(state.surface.error){const p=document.createElement("p");p.textContent="NASA MODIS observations unavailable: "+state.surface.error+". No estimated values substituted.";d.append(p);}
+     else {
+       for(const [period,row] of Object.entries(state.surface.measurements||{})){
+        const p=document.createElement("p");
+        p.textContent=(period==="surface_day"?"Daytime":"Nighttime")+" Earth land-surface temperature: "+
+          (row.value==null?"No quality-accepted observations":row.value+" °C")+
+          " · "+row.accepted_composites+"/"+row.total_composites+" accepted 8-day composites (January 2025).";
+        d.append(p);
+       }
+       const note=document.createElement("p");note.textContent="MODIS measures Earth's land-surface temperature at ~1km, NOT 2m air temperature. It is not directly comparable with lunar Diviner or Mars surface temperature without matching local time, season, and geometry.";d.append(note);
+       const link=document.createElement("a");link.href=state.surface.source_url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="NASA ORNL MODIS data source";d.append(link);
+     }
+   }else if(state.selected){const p=document.createElement("p");p.textContent="Surface temperature evidence loads on Earth region selection.";d.append(p);}
+ }
  if(state.view==="earth" && state.surveyMode==="measured"){
   const heading=document.createElement("b");heading.textContent="Scientific evidence & limitations";d.append(heading);
   if(state.evidenceLoading){const p=document.createElement("p");p.textContent="Building source-backed comparison report…";d.append(p);}
@@ -199,18 +217,18 @@ function details(){
 }
 function paint(){updateHeader();renderList();details();render();}
 async function loadPlanet(target){
- const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,evidence:null,evidenceLoading:false,angle:-.5,pitch:.18,zoom:1});
+ const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,evidence:null,evidenceLoading:false,surface:null,surfaceLoading:false,angle:-.5,pitch:.18,zoom:1});
  $("location-search").value="";paint();
  try{const data=await request("/exploration/sites?body="+target);if(token!==state.token)return;state.sites=data.sites;paint();refreshLive();}
  catch(e){$("list-label").textContent="Unable to load sites: "+e.message;}
 }
 async function choose(item){
  if(state.view==="earth"){
-  state.selected=item;state.measurements=null;state.evidence=null;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();loadEarthMeasurements(item);if(state.surveyMode==="measured")loadAnalogEvidence(item);return;
+  state.selected=item;state.measurements=null;state.surface=null;state.evidence=null;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();loadEarthMeasurements(item);loadEarthSurface(item);if(state.surveyMode==="measured")loadAnalogEvidence(item);return;
  }
  const token=++state.token;
  state.view="earth";state.reference=null;state.selected=null;state.selectedSite=item;
- state.screening=null;state.earth=[];state.evidence=null;state.mro=null;state.mroLoading=state.target==="mars";
+ state.screening=null;state.earth=[];state.evidence=null;state.surface=null;state.surfaceLoading=false;state.mro=null;state.mroLoading=state.target==="mars";
  $("location-search").value="";paint();
  if(state.target==="mars")loadMROContext(item);
  try{
@@ -224,7 +242,7 @@ async function choose(item){
    if(token!==state.token)return;
    state.surveyMode="qualitative";state.screening=data;state.reference=null;state.earth=data.results||[];
   }
-  if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);if(state.surveyMode==="measured")loadAnalogEvidence(state.earth[0]);}
+  if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);loadEarthSurface(state.earth[0]);if(state.surveyMode==="measured")loadAnalogEvidence(state.earth[0]);}
   if(state.earth.length){state.angle=-rad(state.earth[0].longitude);state.pitch=rad(state.earth[0].latitude);}
   paint();
  }catch(e){$("list-label").textContent="Unable to load evidence screening: "+e.message;}
@@ -259,6 +277,21 @@ async function loadMROContext(site){
  }
  if(seq!==state.mroSeq)return;
  state.mroLoading=false;details();
+}
+
+async function loadEarthSurface(item){
+ const seq=++state.surfaceSeq;
+ state.surface=null;state.surfaceLoading=true;details();
+ try{
+  const res=await request("/science/earth-surface?latitude="+item.latitude+"&longitude="+item.longitude);
+  if(seq!==state.surfaceSeq||state.selected?.id!==item.id)return;
+  state.surface=res;
+ }catch(error){
+  if(seq!==state.surfaceSeq||state.selected?.id!==item.id)return;
+  state.surface={error:error.message};
+ }
+ if(seq!==state.surfaceSeq)return;
+ state.surfaceLoading=false;details();
 }
 
 async function loadEarthMeasurements(item){
