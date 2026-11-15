@@ -41,6 +41,16 @@ def summarize_power(data:dict)->dict:
             out[code]={**definition,"value":None,"sample_days":0,"status":"missing_from_provider"}
             continue
         val=sum(nums) if definition["aggregation"]=="sum" else sum(nums)/len(nums)
+        if code=="ALLSKY_SFC_SW_DWN":
+            # AG community returns solar energy as MJ/m²/day, unlike RE.
+            meta=data.get("parameters",{}).get(code,{})
+            unit=str(meta.get("units","")).lower().replace(" ","")
+            if unit.startswith("mj"):
+                val=val/3.6
+            elif "kw" not in unit:
+                out[code]={**definition,"value":None,"sample_days":len(nums),
+                           "status":"unverified_provider_unit"}
+                continue
         out[code]={**definition,"value":round(val,3),"sample_days":len(nums),
                    "status":"source_derived","period":"2025-01-01/2025-01-31",
                    "source":"NASA POWER AG (Earth)","source_url":URL}
