@@ -1,7 +1,7 @@
 "use strict";
 // Moon-first interactive research viewer. Navigation sites are not similarity claims.
 const $=id=>document.getElementById(id);
-const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0};
+const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative"};
 const canvas=$("globe"),ctx=canvas.getContext("2d");
 const TAU=Math.PI*2;
 const rad=v=>v*Math.PI/180;
@@ -100,10 +100,10 @@ function updateHeader(){
  $("globe-name").textContent=planet?name.toUpperCase():"EARTH";
  $("mode-label").textContent=planet?"SELECT A "+(state.target==="moon"?"LUNAR":"MARTIAN")+" REGION":name.toUpperCase()+" → EARTH";
  $("page-heading").textContent=planet?"Explore "+(state.target==="moon"?"the Moon":"Mars"):"Earth counterparts";
- $("page-subtitle").textContent=planet?"Select one of the documented locations or rotate the globe.":"Evidence-linked Earth analog screening · descriptive feature overlap, not physical similarity.";
+ $("page-subtitle").textContent=planet?"Select one of the documented locations or rotate the globe.":"Earth candidates ranked by NASA terrain measurement distance where available; otherwise preliminary descriptor overlap.";
  $("side-title").textContent=planet?name+" mission sites":"Earth analog candidates";
  $("side-type").textContent=planet?"DOCUMENTED NAVIGATION SITES":"PRELIMINARY FEATURE MATCHES";
- $("side-description").textContent=planet?"Select a named landing site, or click a region on the globe.":"Percentages compare documented feature tags only, not measured geophysical similarity.";
+ $("side-description").textContent=planet?"Select a named landing site, or click a region on the globe.":"Automatic global topography screening where measured data exists; otherwise descriptive feature-tag overlap.";
  $("back-button").classList.toggle("hidden",planet);
 }
 function renderList(){
@@ -114,7 +114,7 @@ function renderList(){
  if(!matches.length){const p=document.createElement("p");p.className="empty";p.textContent=state.view==="earth"?(state.screening?.message||"No evidenced matches for this location."):"No matching sites.";list.append(p);}
  matches.forEach((item,i)=>{const b=document.createElement("button");b.type="button";b.className="location";if(state.selected?.id===item.id)b.classList.add("selected");
  const info=document.createElement("span"),title=document.createElement("b"),sub=document.createElement("small");
- title.textContent=item.name;sub.textContent=(item.mission?item.mission+" · ":"")+fmt(item)+(typeof item.tag_overlap_percent==="number"?" · "+item.tag_overlap_percent+"% tag overlap":"");info.append(title,sub);b.append(info);const num=document.createElement("small");num.textContent=typeof item.tag_overlap_percent==="number"?item.tag_overlap_percent+"%":String(i+1).padStart(2,"0");b.append(num);
+ title.textContent=item.name;sub.textContent=(item.mission?item.mission+" · ":"")+fmt(item)+(typeof item.terrain_distance==="number"?" · distance "+item.terrain_distance.toFixed(2):typeof item.tag_overlap_percent==="number"?" · "+item.tag_overlap_percent+"% tag overlap":"");info.append(title,sub);b.append(info);const num=document.createElement("small");num.textContent=typeof item.terrain_distance==="number"?item.terrain_distance.toFixed(2):typeof item.tag_overlap_percent==="number"?item.tag_overlap_percent+"%":String(i+1).padStart(2,"0");b.append(num);
  b.addEventListener("click",()=>choose(item));list.append(b);});
 }
 function details(){
@@ -146,6 +146,17 @@ function details(){
    const warning=document.createElement("p");warning.textContent="These are real Earth measurements. A physically measured Moon/Mars comparison is not yet available.";d.append(warning);
   }
  }
+ if(state.selected && typeof state.selected.terrain_distance==="number"){
+  const ref=state.reference;
+  const label=document.createElement("p");label.textContent="Measured NASA–ASTER terrain screening · lower distance = closer topographic variation. Not a physical similarity %.";d.append(label);
+  const value=document.createElement("p");value.textContent="Terrain distance: "+state.selected.terrain_distance.toFixed(4)+" (uncalibrated, dimensionless). Coverage: 2 of 8 planned feature dimensions.";d.append(value);
+  const row=document.createElement("p");row.textContent="Earth 24km window: relief "+state.selected.stats.relief_m+"m, vertical SD "+state.selected.stats.height_std_m+"m.";d.append(row);
+  if(ref?.stats){const r=document.createElement("p");r.textContent=ref.name+" NASA "+ref.dataset+": relief "+ref.stats.relief_m+"m; vertical SD "+ref.stats.height_std_m+"m.";d.append(r);}
+  for(const source of [ref?.source_url,state.selected.source_url]){
+   if(source?.startsWith("https://")){const a=document.createElement("a");a.href=source;a.target="_blank";a.rel="noopener noreferrer";a.textContent="DEM source";d.append(a,document.createTextNode("  "));}
+  }
+  const note=document.createElement("p");note.textContent="Screened automatically across coarse global Earth cells; terrain-only lead, not a verified analog, mineralogy match, landing recommendation or habitable base.";d.append(note);
+ }
  if(state.selected && typeof state.selected.tag_overlap_percent==="number"){
   const score=document.createElement("p");score.textContent=state.selected.tag_overlap_percent+"% documented feature-tag overlap · "+state.selected.overlap_fraction+" shared/total features";d.append(score);
   const matched=document.createElement("p");matched.textContent="Shared features: "+state.selected.matching_features.join(", ");d.append(matched);
@@ -159,7 +170,7 @@ function details(){
 }
 function paint(){updateHeader();renderList();details();render();}
 async function loadPlanet(target){
- const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,angle:-.5,pitch:.18,zoom:1});
+ const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",angle:-.5,pitch:.18,zoom:1});
  $("location-search").value="";paint();
  try{const data=await request("/exploration/sites?body="+target);if(token!==state.token)return;state.sites=data.sites;paint();refreshLive();}
  catch(e){$("list-label").textContent="Unable to load sites: "+e.message;}
@@ -172,9 +183,16 @@ async function choose(item){
  state.view="earth";state.reference=null;state.selected=null;state.selectedSite=item;
  state.screening=null;state.earth=[];$("location-search").value="";paint();
  try{
-  const data=await request("/science/analog-screening?body="+state.target+"&site_id="+encodeURIComponent(item.id));
+  const measured=await request("/science/terrain-survey/candidates?body="+state.target+"&site_id="+encodeURIComponent(item.id));
   if(token!==state.token)return;
-  state.screening=data;state.earth=data.results||[];
+  if(measured.ready && measured.results?.length){
+   state.surveyMode="measured";state.screening=measured;state.reference=measured.reference;
+   state.earth=measured.results;
+  }else{
+   const data=await request("/science/analog-screening?body="+state.target+"&site_id="+encodeURIComponent(item.id));
+   if(token!==state.token)return;
+   state.surveyMode="qualitative";state.screening=data;state.reference=null;state.earth=data.results||[];
+  }
   if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);}
   if(state.earth.length){state.angle=-rad(state.earth[0].longitude);state.pitch=rad(state.earth[0].latitude);}
   paint();
