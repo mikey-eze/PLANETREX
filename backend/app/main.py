@@ -64,6 +64,13 @@ def create_app() -> FastAPI:
                 for path in paths:
                     try:
                         response = await client.get(path)
+                        if "/scientific/" in path and response.status_code == 200:
+                            payload = response.json()
+                            records = payload.get("events", payload.get("products", []))
+                            logger.warning("PROBE_DATA %s count=%d records=%s",
+                                           path, len(records),
+                                           repr([{"id": item.get("id"), "title": item.get("title")}
+                                                 for item in records[:3]])[:700])
                         logger.warning("PROBE %s HTTP %d bytes=%d sample=%s",
                                        path, response.status_code, len(response.content),
                                        response.text[:110].replace(chr(10), " "))
