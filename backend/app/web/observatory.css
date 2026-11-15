@@ -312,3 +312,40 @@ main {max-width:1850px;margin:0 auto}
  .mission-workspace.layout-single .orb-window{height:370px}
  .mission-workspace.layout-single .orb-window canvas{width:min(calc(100% - 30px),355px)}
 }
+
+/* Earth evidence: compact source-attributed data, existing blue/green theme. */
+.earth-evidence-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:8px;margin:12px 0 8px
+}
+.earth-evidence-grid>div{
+ background:#f0faff;border:1px solid #d1e8f5;
+ border-radius:8px;padding:9px 10px;min-width:0
+}
+.earth-evidence-grid>div:nth-child(even){background:#f1fcf7;border-color:#cdebdc}
+.earth-evidence-grid span{
+ display:block;color:#477b92;font-size:10px;font-weight:700
+}
+.earth-evidence-grid strong{
+ display:block;color:#13486f;font-size:14px;margin-top:4px;
+ overflow-wrap:anywhere
+}
+#earth-condition-filter{
+ width:100%;border:1px solid #bcd8e7;border-radius:7px;
+ background:#faffff;color:#19364f;padding:9px 11px;
+ font-size:12px
+}
+.modis-row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #e5f3f9;font-size:11px}
+.modis-row strong{color:#11845b}
+.deep-science .source-links{padding:8px 0 0}
+.mission-workspace .deep-science{grid-column:1/-1;grid-row:3}
+.mission-workspace.layout-single .deep-science{grid-column:auto;grid-row:auto}
+.mission-workspace.layout-single .candidate-instrument{grid-column:auto;grid-row:auto}
+@media(max-width:980px){
+ .mission-workspace.layout-single .deep-science{grid-column:1/-1}
+ .mission-workspace.layout-single .candidate-instrument{grid-column:2;grid-row:2}
+}
+@media(max-width:700px){
+ .mission-workspace .deep-science,
+ .mission-workspace.layout-single .deep-science{grid-column:auto;grid-row:auto}
+}
