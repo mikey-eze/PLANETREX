@@ -1,0 +1,16 @@
+# Render Blueprint: deploy the FastAPI-served PLANETREX explorer.
+# Source: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: planetrex-explorer
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
