@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Michroma&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&display=swap');
 
 /* PLANETREX | Clean white / blue / green research interface.
-   The Xirod reference is approximated with the freely hosted Michroma display face. */
+   The Xirod reference is approximated with the freely hosted Orbitron display face. */
 :root {
   color-scheme: light;
   --white:#ffffff;--page:#f4faff;--blue:#1266ad;--blue-deep:#13486f;
@@ -23,8 +23,8 @@ a {color:var(--blue);text-decoration:underline;text-underline-offset:2px}
 .identity {display:flex;gap:9px;align-items:center}
 .identity .sigil {color:var(--green);font-size:26px}
 .identity strong,.mission-head h1,.stage-top h2,.telemetry-bar h2,.instrument-title h3 {
- font-family:'Michroma','Inter',sans-serif;text-transform:uppercase;letter-spacing:.025em}
-.identity strong {display:block;font-size:17px;letter-spacing:.065em;color:var(--blue-deep)}
+ font-family:'Orbitron','Inter',sans-serif;text-transform:uppercase;letter-spacing:.025em}
+.identity strong {display:block;font-size:17px;font-weight:900;letter-spacing:.055em;color:var(--blue-deep)}
 .identity small {display:block;color:var(--green);font-size:9px;letter-spacing:.12em;font-weight:700}
 .command-group {display:flex;align-items:center;gap:8px}
 .micro-label,.eyebrow,.search-label {font-size:10px;letter-spacing:.11em;color:var(--green);font-weight:800}
@@ -43,11 +43,11 @@ a {color:var(--blue);text-decoration:underline;text-underline-offset:2px}
 main {max-width:1850px;margin:0 auto}
 .mission-head {padding:26px clamp(16px,3vw,50px) 19px;display:flex;align-items:center;justify-content:space-between;gap:20px}
 .mission-head h1 {font-size:clamp(24px,3.2vw,48px);line-height:1.25;letter-spacing:.055em;margin:6px 0;
-  font-weight:400;color:#102e47}
+  font-weight:900;color:#102e47}
 .mission-head .lead {color:var(--muted);font-size:13px;max-width:610px;margin:4px 0}
 .mission-status {text-align:right;min-width:128px;border-left:2px solid #a5ddc8;padding-left:15px}
 .mission-status span,.mission-status small {display:block;font-size:9px;letter-spacing:.07em;color:var(--muted)}
-.mission-status strong {display:block;font:20px 'Michroma',sans-serif;color:var(--green);margin:2px 0}
+.mission-status strong {display:block;font:20px 'Orbitron',sans-serif;color:var(--green);margin:2px 0}
 .mission-workspace {padding:0 clamp(16px,3vw,50px) 24px;position:relative}
 .celestial-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:0}
 .celestial-grid.only-earth,.celestial-grid.only-target {grid-template-columns:minmax(0,1fr)}
@@ -55,7 +55,7 @@ main {max-width:1850px;margin:0 auto}
 .celestial-stage {background:var(--white);border:1px solid var(--line);border-radius:14px;
   overflow:hidden;min-width:0;box-shadow:0 8px 24px #1d83ad0b}
 .stage-top {display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:18px 21px 13px}
-.stage-top h2 {font-weight:400;color:var(--blue-deep);font-size:15px;margin:6px 0 0;line-height:1.5}
+.stage-top h2 {font-weight:800;color:var(--blue-deep);font-size:15px;margin:6px 0 0;line-height:1.5}
 .stage-top h2 span {display:block;font:500 11px 'Inter',sans-serif;color:var(--muted);text-transform:none;letter-spacing:0}
 .stage-tag {font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--green);
   background:var(--green-light);border-radius:5px;padding:6px 8px;white-space:nowrap}
@@ -94,7 +94,7 @@ main {max-width:1850px;margin:0 auto}
 .telemetry[hidden] {display:none!important}
 .telemetry-bar {background:#f0faff;display:flex;justify-content:space-between;
   align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);flex:0 0 auto}
-.telemetry-bar h2 {font-size:15px;font-weight:400;margin:5px 0 0;color:var(--blue-deep)}
+.telemetry-bar h2 {font-size:15px;font-weight:800;margin:5px 0 0;color:var(--blue-deep)}
 .close-button {width:35px;height:35px;border-radius:9px;border:1px solid #b6d9e5;
   background:#fff;color:var(--blue);font-size:24px;font-weight:600;line-height:1;
   display:grid;place-items:center;flex-shrink:0}
@@ -109,7 +109,7 @@ main {max-width:1850px;margin:0 auto}
 .popup-location small {grid-column:1/-1;font-size:10px;color:var(--muted)}
 .instrument {padding:13px 16px;border-bottom:1px solid var(--line);min-width:0}
 .instrument-title {display:flex;justify-content:space-between;gap:10px;align-items:center}
-.instrument-title h3 {font-size:12px;font-weight:400;color:var(--blue-deep);margin:0}
+.instrument-title h3 {font-size:12px;font-weight:800;color:var(--blue-deep);margin:0}
 .summary-instrument {background:linear-gradient(#fff,#fbfeff)}
 .quick-stats {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
 .mini-stat {background:#f0faff;border:1px solid #d1e8f5;border-radius:8px;padding:10px 8px;min-width:0}
