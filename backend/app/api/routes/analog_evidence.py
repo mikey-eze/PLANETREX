@@ -5,6 +5,7 @@ archive hit as a processed mineral or surface-temperature measurement.
 """
 from __future__ import annotations
 from typing import Literal
+import math
 from fastapi import APIRouter, HTTPException, Query
 
 from app.api.routes.terrain_survey import read_dataset
@@ -37,6 +38,44 @@ NOT_EVALUATED=[
  ("caves_subsurface","No paired validated subsurface/cave measurements."),
  ("engineering_resources","No paired local bearing strength, rock size, radiation protection, or resource measurements.")
 ]
+
+def terrain_sensitivity(reference:dict, shortlist:list[dict], earth_id:str)->dict:
+    """Calculate ranking sensitivity to the arbitrary relief-vs-SD weights.
+
+    The shortlist is *only* the already-returned candidate list, so this is
+    not a global rank and not a statistical confidence interval.
+    """
+    a=reference["stats"]
+    weights=(0.3,0.4,0.5,0.6,0.7)
+    outputs=[]
+    for w in weights:
+        ranks=[]
+        for earth in shortlist:
+            b=earth["stats"]
+            dr=abs(math.log1p(a["relief_m"])-math.log1p(b["relief_m"]))
+            ds=abs(math.log1p(a["height_std_m"])-math.log1p(b["height_std_m"]))
+            ranks.append((w*dr+(1-w)*ds,earth["id"]))
+        ranks.sort()
+        for i,(distance,identifier) in enumerate(ranks,1):
+            if identifier==earth_id:
+                outputs.append({"relief_weight":w,"height_std_weight":round(1-w,2),
+                                "shortlist_rank":i,"distance":round(distance,4)})
+                break
+    if not outputs:
+        raise ValueError("Earth candidate must be part of shortlisted comparisons")
+    positions=[x["shortlist_rank"] for x in outputs]
+    return {
+        "kind":"deterministic_score_weight_sensitivity",
+        "weights_tested":[x["relief_weight"] for x in outputs],
+        "results":outputs,
+        "best_rank_in_shortlist":min(positions),
+        "worst_rank_in_shortlist":max(positions),
+        "stable_shortlist_position":len(set(positions))==1,
+        "uncertainty_type":"method_weight_sensitivity_only",
+        "calibrated_statistical_confidence":None,
+        "interpretation":"Rank changes when arbitrary weights change; ranking sensitivity is not measurement uncertainty, source-validation, or a scientific match percentage."
+    }
+
 
 @router.get("/analog-evidence")
 def analog_evidence(body:Literal["moon","mars"],site_id:str,earth_id:str)->dict:
@@ -105,6 +144,7 @@ def analog_evidence(body:Literal["moon","mars"],site_id:str,earth_id:str)->dict:
       "source_batch_date":data["built_at"],
       "global_grid":data["global_scan"],
       "refinement":data.get("refinement"),
+      "terrain_rank_sensitivity":terrain_sensitivity(ref,data["screenings"].get(key,[]),earth_id),
       "scientific_similarity_percent":None,
       "scientific_status":"preliminary_measurement_based_terrain_screening",
       "important":"The method compares only 2 regional DEM descriptors, not lunar/Martian climate, mineralogy or base suitability. Local ground truth and uncertainties are essential."
