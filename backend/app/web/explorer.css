@@ -49,3 +49,10 @@ body{height:auto;min-height:100vh;overflow-y:auto}
 @media(max-width:800px){.stage{height:clamp(370px,58vh,540px);min-height:370px}
  #globe{width:min(92%,calc(58vh - 80px),440px)!important;max-height:calc(100% - 60px)!important}
  .instructions{max-width:65%;line-height:1.5}}
+
+/* Three distinct NASA source collections: Earth events, planetary imagery, Earthdata. */
+@media(min-width:1180px){.live-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:801px) and (max-width:1179px){.live-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.live-grid{grid-template-columns:minmax(0,1fr)}}
+.details small{color:#99aec0;display:inline-block;line-height:1.5}
+.details p{margin:9px 0}
