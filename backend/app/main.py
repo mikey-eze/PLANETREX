@@ -16,6 +16,7 @@ from app.api.routes.discovery import router as discovery_router
 from app.config import get_settings
 from app.api.routes.profiles import router as profiles_router
 from app.api.routes.sites import router as sites_router
+from app.api.routes.analog_screening import router as analog_screening_router
 
 
 def create_app() -> FastAPI:
@@ -38,6 +39,7 @@ def create_app() -> FastAPI:
     application.include_router(discovery_router)
     application.include_router(profiles_router)
     application.include_router(sites_router)
+    application.include_router(analog_screening_router)
     explorer_dir = Path(__file__).resolve().parent / "web"
     application.mount("/explorer-assets", StaticFiles(directory=explorer_dir), name="explorer-assets")
 
@@ -60,6 +62,8 @@ def create_app() -> FastAPI:
             paths = [
                 "/", "/health", "/explorer", "/explorer-assets/explorer.js",
                 "/exploration/sites?body=moon", "/science/profiles?body=earth",
+                "/science/analog-screening?body=moon&site_id=apollo-15",
+                "/science/analog-screening?body=mars&site_id=perseverance",
                 "/scientific/earth-events?limit=5",
                 "/scientific/planetary-products?target=moon&limit=5",
                 "/scientific/planetary-products?target=mars&limit=5",
