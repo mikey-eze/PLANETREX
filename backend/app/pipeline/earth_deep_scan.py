@@ -58,6 +58,16 @@ def sum_source_power(payload:dict)->dict:
                if isinstance(k,str) and k.startswith(YEAR)
                and isinstance(v,(int,float)) and not isinstance(v,bool) and math.isfinite(v) and v>-900]
         value=round(sum(v for _,v in dates) if kind=="sum" else sum(v for _,v in dates)/len(dates),3) if dates else None
+        if name=="ALLSKY_SFC_SW_DWN" and value is not None:
+            # NASA POWER AG community returns MJ/m²/day. Convert to kWh/m²/day.
+            meta=payload.get("parameters",{}).get(name,{})
+            unit_raw=str(meta.get("units","")).lower().replace(" ","")
+            if unit_raw.startswith("mj/") or unit_raw.startswith("mj"):
+                value=round(value/3.6,3)
+            elif "kw" in unit_raw:
+                pass  # Renewable Energy community already returns kWh, if used later.
+            else:
+                value=None  # Never assign a physical unit if the provider unit is unknown.
         fields[field]={"value":value,"unit":unit,"sample_days":len(dates),
                        "status":"source_derived" if value is not None else "no_source_data",
                        "source":"NASA POWER daily", "source_url":POWER, "period":YEAR,
