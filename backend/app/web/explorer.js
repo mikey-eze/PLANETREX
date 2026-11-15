@@ -1,7 +1,7 @@
 "use strict";
 // Moon-first interactive research viewer. Navigation sites are not similarity claims.
 const $=id=>document.getElementById(id);
-const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0};
+const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0,evidence:null,evidenceLoading:false,evidenceSeq:0};
 const canvas=$("globe"),ctx=canvas.getContext("2d");
 const TAU=Math.PI*2;
 const rad=v=>v*Math.PI/180;
@@ -123,7 +123,7 @@ function details(){
  p.textContent=state.view==="planet"?"Navigation markers show documented site locations, not scientific matches.":state.reference?"Measured reference: "+state.reference.name:"Descriptive geological feature screening only; quantitative planetary reference measurements are not yet integrated.";
  d.append(p);
  if(state.view==="earth" && state.screening){
-  const summary=document.createElement("p");summary.textContent=state.screening.percent_meaning||"";d.append(summary);
+  const summary=document.createElement("p");summary.textContent=state.screening.score_definition||state.screening.percent_meaning||"";d.append(summary);
   if(state.selectedSite){
    const location=document.createElement("p");location.textContent="Planetary location: "+state.selectedSite.name;d.append(location);
   }
@@ -160,6 +160,21 @@ function details(){
    const warning=document.createElement("p");warning.textContent="These are real Earth measurements. A physically measured Moon/Mars comparison is not yet available.";d.append(warning);
   }
  }
+ if(state.view==="earth" && state.surveyMode==="measured"){
+  const heading=document.createElement("b");heading.textContent="Scientific evidence & limitations";d.append(heading);
+  if(state.evidenceLoading){const p=document.createElement("p");p.textContent="Building source-backed comparison report…";d.append(p);}
+  else if(state.evidence?.ready){
+   const info=state.evidence;
+   const p=document.createElement("p");p.textContent="Comparable dimensions: "+info.number_of_matched_dimensions+"/"+info.total_planned_dimensions+" (terrain only).";d.append(p);
+   for(const f of info.measured_dimensions[0]?.measured_comparisons||[]){
+     const line=document.createElement("p");line.textContent=f.feature+": Moon/Mars "+f.planetary_value+" "+f.unit+
+      " vs Earth "+f.earth_value+" "+f.unit+" (absolute difference "+f.absolute_difference_m+" "+f.unit+").";d.append(line);
+   }
+   const mismatch=document.createElement("p");mismatch.textContent="Key mismatches: "+Object.values(info.where_analogy_breaks_down.physical_environment_mismatches).join(" ");d.append(mismatch);
+   const task=document.createElement("p");task.textContent="Potential research use: "+info.possible_research_use;d.append(task);
+   const missing=document.createElement("p");missing.textContent="Unmeasured: "+info.not_measured.map(x=>x.dimension.replaceAll("_"," ")).join(", ")+". No physical similarity percentage is claimed.";d.append(missing);
+  }
+ }
  if(state.selected && typeof state.selected.terrain_distance==="number"){
   const ref=state.reference;
   const label=document.createElement("p");label.textContent="Measured NASA–ASTER terrain screening · lower distance = closer topographic variation. Not a physical similarity %.";d.append(label);
@@ -184,18 +199,18 @@ function details(){
 }
 function paint(){updateHeader();renderList();details();render();}
 async function loadPlanet(target){
- const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,angle:-.5,pitch:.18,zoom:1});
+ const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,evidence:null,evidenceLoading:false,angle:-.5,pitch:.18,zoom:1});
  $("location-search").value="";paint();
  try{const data=await request("/exploration/sites?body="+target);if(token!==state.token)return;state.sites=data.sites;paint();refreshLive();}
  catch(e){$("list-label").textContent="Unable to load sites: "+e.message;}
 }
 async function choose(item){
  if(state.view==="earth"){
-  state.selected=item;state.measurements=null;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();loadEarthMeasurements(item);return;
+  state.selected=item;state.measurements=null;state.evidence=null;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();loadEarthMeasurements(item);if(state.surveyMode==="measured")loadAnalogEvidence(item);return;
  }
  const token=++state.token;
  state.view="earth";state.reference=null;state.selected=null;state.selectedSite=item;
- state.screening=null;state.earth=[];state.mro=null;state.mroLoading=state.target==="mars";
+ state.screening=null;state.earth=[];state.evidence=null;state.mro=null;state.mroLoading=state.target==="mars";
  $("location-search").value="";paint();
  if(state.target==="mars")loadMROContext(item);
  try{
@@ -209,10 +224,26 @@ async function choose(item){
    if(token!==state.token)return;
    state.surveyMode="qualitative";state.screening=data;state.reference=null;state.earth=data.results||[];
   }
-  if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);}
+  if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);if(state.surveyMode==="measured")loadAnalogEvidence(state.earth[0]);}
   if(state.earth.length){state.angle=-rad(state.earth[0].longitude);state.pitch=rad(state.earth[0].latitude);}
   paint();
  }catch(e){$("list-label").textContent="Unable to load evidence screening: "+e.message;}
+}
+
+async function loadAnalogEvidence(item){
+ const seq=++state.evidenceSeq;
+ state.evidenceLoading=true;state.evidence=null;details();
+ try{
+  const data=await request("/science/analog-evidence?body="+state.target+
+    "&site_id="+encodeURIComponent(state.selectedSite.id)+"&earth_id="+encodeURIComponent(item.id));
+  if(seq!==state.evidenceSeq||state.selected?.id!==item.id)return;
+  state.evidence=data;
+ }catch(error){
+  if(seq!==state.evidenceSeq)return;
+  state.evidence={ready:false,error:error.message};
+ }
+ if(seq!==state.evidenceSeq)return;
+ state.evidenceLoading=false;details();
 }
 
 async function loadMROContext(site){
