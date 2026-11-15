@@ -1,7 +1,7 @@
 "use strict";
 // Moon-first interactive research viewer. Navigation sites are not similarity claims.
 const $=id=>document.getElementById(id);
-const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0,evidence:null,evidenceLoading:false,evidenceSeq:0,surface:null,surfaceLoading:false,surfaceSeq:0};
+const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0,evidence:null,evidenceLoading:false,evidenceSeq:0,surface:null,surfaceLoading:false,surfaceSeq:0,ctxMeasured:null,ctxMeasuredLoading:false,ctxMeasuredSeq:0};
 const canvas=$("globe"),ctx=canvas.getContext("2d");
 const TAU=Math.PI*2;
 const rad=v=>v*Math.PI/180;
@@ -130,6 +130,23 @@ function details(){
  }
  if(state.view==="earth" && state.target==="mars"){
   const h=document.createElement("b");h.textContent="NASA MRO CTX · High-resolution Mars terrain";d.append(h);
+  if(state.ctxMeasuredLoading){const q=document.createElement("p");q.textContent="Loading measured CTX elevation raster scenes…";d.append(q);}
+  else if(state.ctxMeasured){
+   if(state.ctxMeasured.count){
+    const p=document.createElement("p");p.textContent=state.ctxMeasured.count+" real CTX stereo DTM raster overview(s) measured around "+state.ctxMeasured.site_id+
+      " (scene-wide, not the landing-point elevation).";d.append(p);
+    for(const scene of state.ctxMeasured.scenes){
+     const m=scene.measurement;
+     const line=document.createElement("p");line.textContent="CTX "+scene.id+": 5th–95th percentile elevation spread "+
+       m.robust_relief_p95_p05_m+" m; valid overview pixels "+(100*m.valid_pixel_fraction).toFixed(1)+"%; nominal grid posting "+
+       m.nominal_post_spacing_m+" m. Not used in similarity ranking.";d.append(line);
+     const link=document.createElement("a");link.href=scene.asset_url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="View actual CTX source raster";d.append(link);
+    }
+   }else{
+    const note=document.createElement("p");note.textContent="No measured high-resolution CTX scene raster has been processed for this site.";d.append(note);
+   }
+  }
+
   if(state.mroLoading){
    const p=document.createElement("p");p.textContent="Checking MRO CTX stereo coverage…";d.append(p);
   }else if(state.mro){
@@ -217,7 +234,7 @@ function details(){
 }
 function paint(){updateHeader();renderList();details();render();}
 async function loadPlanet(target){
- const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,evidence:null,evidenceLoading:false,surface:null,surfaceLoading:false,angle:-.5,pitch:.18,zoom:1});
+ const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,evidence:null,evidenceLoading:false,surface:null,surfaceLoading:false,ctxMeasured:null,ctxMeasuredLoading:false,angle:-.5,pitch:.18,zoom:1});
  $("location-search").value="";paint();
  try{const data=await request("/exploration/sites?body="+target);if(token!==state.token)return;state.sites=data.sites;paint();refreshLive();}
  catch(e){$("list-label").textContent="Unable to load sites: "+e.message;}
@@ -228,9 +245,9 @@ async function choose(item){
  }
  const token=++state.token;
  state.view="earth";state.reference=null;state.selected=null;state.selectedSite=item;
- state.screening=null;state.earth=[];state.evidence=null;state.surface=null;state.surfaceLoading=false;state.mro=null;state.mroLoading=state.target==="mars";
+ state.screening=null;state.earth=[];state.evidence=null;state.surface=null;state.surfaceLoading=false;state.mro=null;state.ctxMeasured=null;state.ctxMeasuredLoading=state.target==="mars";state.mroLoading=state.target==="mars";
  $("location-search").value="";paint();
- if(state.target==="mars")loadMROContext(item);
+ if(state.target==="mars"){loadMROContext(item);loadMeasuredCTX(item);}
  try{
   const measured=await request("/science/terrain-survey/candidates?body="+state.target+"&site_id="+encodeURIComponent(item.id));
   if(token!==state.token)return;
@@ -262,6 +279,21 @@ async function loadAnalogEvidence(item){
  }
  if(seq!==state.evidenceSeq)return;
  state.evidenceLoading=false;details();
+}
+
+async function loadMeasuredCTX(site){
+ const seq=++state.ctxMeasuredSeq;
+ state.ctxMeasured=null;state.ctxMeasuredLoading=true;details();
+ try{
+  const data=await request("/science/mro-ctx-measured?site_id="+encodeURIComponent(site.id));
+  if(seq!==state.ctxMeasuredSeq||state.selectedSite?.id!==site.id)return;
+  state.ctxMeasured=data;
+ }catch(e){
+  if(seq!==state.ctxMeasuredSeq)return;
+  state.ctxMeasured={count:0,scenes:[],error:e.message};
+ }
+ if(seq!==state.ctxMeasuredSeq)return;
+ state.ctxMeasuredLoading=false;details();
 }
 
 async function loadMROContext(site){
