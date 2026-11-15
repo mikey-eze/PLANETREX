@@ -49,18 +49,28 @@ def check():
                     assert canvas["x"]>=region["x"]-2
                     assert canvas["x"]+canvas["width"]<=region["x"]+region["width"]+2
                 stages=page.locator("#stages").bounding_box()
-                popup=page.locator("#telemetry").bounding_box()
-                assert stages and popup, "Missing globe stage or data popup"
-                assert popup["y"] < stages["y"]+stages["height"], "Data must pop up ABOVE the globes, not below"
-                assert popup["x"]+popup["width"] <= viewport["width"]+2
-                assert popup["y"]+popup["height"] <= viewport["height"]+2
-                assert page.locator("#drawer-toggle").is_visible(), "Popup close button must be visible"
-                assert page.locator("#earth-temp").is_visible(), "Earth temperature status must be readable"
-                assert page.locator("#distance-score").is_visible(), "Terrain score must be visible"
+                data=page.locator("#telemetry").bounding_box()
+                assert stages and data, "Missing globe stage or data panel"
+                assert data["y"]>=stages["y"]+stages["height"]-3, "DUAL: data must be BELOW both globes"
+                assert page.locator("#earth-temp").is_visible(), "Earth temperature must be readable"
+                assert page.locator("#distance-score").is_visible(), "Terrain distance must be readable"
+                # Texture renderer uses per-pixel spherical sampling, not a blocky tile mosaic.
+                page.wait_for_function(
+                    "() => ['earth','target'].every(k => document.getElementById(k+'-globe').dataset.textureQuality === 'full-resolution')",
+                    timeout=25000
+                )
                 page.screenshot(path=str(SHOTS/(label+"-observatory-dual.png")),full_page=True)
                 page.locator("#mode-target").click()
                 assert page.locator("#target-globe").is_visible()
                 assert not page.locator("#earth-globe").is_visible()
+                single_stage=page.locator("#stages").bounding_box()
+                single_data=page.locator("#telemetry").bounding_box()
+                assert single_stage and single_data
+                if label=="desktop":
+                    assert single_stage["x"]>=single_data["x"]+single_data["width"]-3, "SINGLE: globe must be RIGHT of data"
+                    assert abs(single_stage["y"]-single_data["y"])<3, "SINGLE: data and globe must align"
+                else:
+                    assert single_data["y"]>=single_stage["y"]+single_stage["height"]-3
                 page.locator("#mode-earth").click()
                 assert not page.locator("#target-globe").is_visible()
                 assert page.locator("#earth-globe").is_visible()
