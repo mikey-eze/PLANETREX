@@ -331,23 +331,32 @@ async function loadEightDomainComparison(earth){
     "&site_id="+encodeURIComponent(site)+"&earth_id="+encodeURIComponent(earthId));
   if(token!==state.deepToken||state.earth?.id!==earthId)return;
   target.replaceChildren();
+  const scores=data.paired_domain_scores;
   const headline=document.createElement("p");
-  headline.textContent="Measured terrain similarity: "+data.terrain_similarity_percent+
-    "% · Eight-domain coverage: "+data.coverage_percent+"%";
+  headline.textContent="Terrain screening index: "+data.terrain_similarity_percent+
+    "% · Paired-domain coverage: "+(scores?.domain_coverage_percent??0)+"%";
   target.append(headline);
   const note=document.createElement("p");note.className="simple-note";
-  note.textContent="Overall 8-domain similarity: NOT YET CALCULABLE. Terrain percentage is a descriptive index, not a scientifically validated match.";
+  note.textContent=scores?.overall_eight_domain_similarity_percent!=null?
+    "Complete eight-domain descriptive index: "+scores.overall_eight_domain_similarity_percent+"% (not a validated probability).":
+    "Overall eight-domain similarity: unavailable until all required paired measurements exist. Missing domains are never assigned fabricated percentages.";
   target.append(note);
   for(const [id,label] of Object.entries(eightDomainLabels)){
-   const domain=data.domain_results[id];
+   const domain=scores?.domains?.[id];
    const item=document.createElement("div");item.className="domain-card";
    const title=document.createElement("strong");title.textContent=label;
    const status=document.createElement("p");
-   status.textContent=id==="topography"?
-     "Measured terrain index: "+data.terrain_similarity_percent+"% · 2 paired elevation descriptors":
-     domain?.status==="categorical_context_only"?
-     "Mapped rock-category context available · no quantitative mineral percentage":
-     "Insufficient paired planetary/Earth measurements · percentage unavailable";
+   if(domain?.similarity_percent!=null){
+     status.textContent="Measured descriptive similarity: "+domain.similarity_percent+
+       "% · Feature coverage "+domain.feature_coverage_percent+"%";
+   }else if(id==="topography"){
+     status.textContent="Terrain screening index: "+data.terrain_similarity_percent+
+       "% (2 DEM features; alternative model). Full domain score awaiting harmonized input.";
+   }else if(data.domain_results[id]?.status==="categorical_context_only"){
+     status.textContent="Mapped geological category available; quantitative mineral measurements still missing.";
+   }else{
+     status.textContent="No compatible paired measurements · similarity unavailable";
+   }
    item.append(title,status);target.append(item);
   }
  }catch(error){
