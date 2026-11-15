@@ -1,0 +1,52 @@
+name: PLANETREX measured terrain batch
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/app/pipeline/terrain_batch.py'
+      - '.github/workflows/terrain-batch.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  terrain-survey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install DEM processing libraries
+        run: python -m pip install httpx numpy tifffile
+      - name: Fetch NASA LOLA and MOLA DEMs; sample global ASTER Earth grid
+        run: cd backend && python -m app.pipeline.terrain_batch --output ../data/terrain_survey.json
+      - name: Inspect produced scientific evidence
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('data/terrain_survey.json'))
+          assert d['nasa_datasets']['moon']['sha256']
+          assert d['nasa_datasets']['mars']['sha256']
+          assert d['global_scan']['cells_with_terrain_coverage'] >= 5
+          assert any(x['body']=='moon' for x in d['planetary_references'])
+          assert any(x['body']=='mars' for x in d['planetary_references'])
+          assert all(x.get('scientific_similarity_percent') is None
+                     for rows in d['screenings'].values() for x in rows)
+          print('Measured source DEM references:', len(d['planetary_references']))
+          print('Real Earth regions characterized:',d['global_scan']['cells_with_terrain_coverage'])
+          PY
+      - name: Publish versioned batch results to repository
+        run: |
+          git config user.name "planetrex-science-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/terrain_survey.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: refresh sourced global terrain survey [skip ci]"
+            git push
+          fi
+      - name: Upload reproducible results
+        uses: actions/upload-artifact@v4
+        with:
+          name: planetrex-measured-terrain-survey
+          path: data/terrain_survey.json
