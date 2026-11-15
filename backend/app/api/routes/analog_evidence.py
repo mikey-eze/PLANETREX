@@ -78,7 +78,7 @@ def analog_evidence(body:Literal["moon","mars"],site_id:str,earth_id:str)->dict:
                "formula":data["score_definition"],
                "scientific_similarity_percent":None,
                "calibration_status":"not scientifically calibrated",
-               "dimension_coverage_fraction":0.25}
+               "dimension_coverage_fraction":0.125}
     }
     differences={
        "relief_difference_m":round(e["relief_m"]-p["relief_m"],1),
