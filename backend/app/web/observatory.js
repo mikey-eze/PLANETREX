@@ -491,10 +491,10 @@ async function queryElevation(){
 }
 async function checkConnection(){
  try{
-  const [health,survey]=await Promise.all([json("/health"),json("/science/terrain-survey/status")]);
+  const [health,survey,coverage]=await Promise.all([json("/health"),json("/science/terrain-survey/status"),json("/science/coverage")]);
   const okay=survey.ready===true;const dot=document.querySelector(".connection-dot");dot.classList.toggle("active",okay);
   setText("connection-status",okay?"● NASA LOLA / MOLA + ASTER BATCH READY":"● DATA SERVICE PARTIAL");
-  setText("coverage-count",okay?"1 / 8 DOMAINS":"NO MEASURED BATCH");
+  setText("coverage-count",okay?coverage.source_backed_earth_field_profiles+" EARTH SITES":"NO FIELD DATA");
  }catch(e){setText("connection-status","● OFFLINE / SERVICE UNAVAILABLE");}
 }
 for(const kind of ["target","earth"]){setupPointer(kind);$("reset-"+kind).addEventListener("click",()=>resetGlobe(kind))}
