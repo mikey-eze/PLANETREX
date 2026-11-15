@@ -295,3 +295,20 @@ async function refreshLive(){
 }
 $("refresh-live").addEventListener("click",refreshLive);
 refreshLive();
+
+
+async function checkGlobalTerrainSurvey(){
+ const el=$("survey-data-status");if(!el)return;
+ try{
+  const survey=await request("/science/terrain-survey/status");
+  if(survey.ready){
+   const c=survey.global_scan;
+   el.classList.remove("error");
+   el.textContent="Measured DEM survey ready · "+c.cells_with_terrain_coverage+" Earth candidate cells with terrain measurements / "+c.grid_cells_attempted+" systematically screened worldwide · "+survey.planetary_reference_count+" measured Moon/Mars reference footprints · built "+new Date(survey.built_at).toLocaleString()+".";
+  }else{
+   el.classList.add("error");
+   el.textContent="The measurement batch has not been published yet. Descriptive geological screening remains available; no invented terrain results are shown.";
+  }
+ }catch(e){el.classList.add("error");el.textContent="Terrain survey status unavailable: "+e.message;}
+}
+checkGlobalTerrainSurvey();
