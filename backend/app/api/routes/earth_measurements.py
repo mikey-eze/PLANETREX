@@ -19,6 +19,7 @@ router = APIRouter(prefix="/science", tags=["Earth measurements and science sour
 POWER = "https://power.larc.nasa.gov/api/temporal/daily/point"
 ELEVATION = "https://api.open-meteo.com/v1/elevation"
 CMR = "https://cmr.earthdata.nasa.gov/search/collections.json"
+OPEN_TOPO = "https://api.opentopodata.org/v1/aster30m"
 
 _cache: dict[tuple[float, float], tuple[float, dict]] = {}
 CACHE_SECONDS = 12 * 3600
@@ -76,6 +77,25 @@ async def _elev(client, lat, lon):
         "note": "Earth point elevation alone cannot be compared to lunar or Martian elevation across different datums."
     }
 
+async def _fallback_aster_elev(client, lat, lon):
+    """NASA ASTER GDEM via independent Open Topo Data mirror; distinguish provenance."""
+    response = await client.get(OPEN_TOPO, params={"locations": f"{lat},{lon}"})
+    response.raise_for_status()
+    payload = response.json()
+    records = payload.get("results") or []
+    if payload.get("status") != "OK" or len(records) != 1:
+        raise ValueError("ASTER elevation service returned no valid single-point response")
+    value = records[0].get("elevation")
+    if not isinstance(value, (float, int)) or isinstance(value, bool) or not math.isfinite(value):
+        raise ValueError("ASTER DEM missing value at this coordinate")
+    return {
+        "label": "Ground elevation from ASTER DEM", "value": float(value),
+        "unit": "m", "source": "NASA ASTER GDEM via Open Topo Data",
+        "source_url": OPEN_TOPO, "source_data": "ASTER global DEM ~30m",
+        "kind": "DEM model sampled at point (independent backup)",
+        "note": "Fallback NASA-derived Earth elevation; distinct model/datum from Copernicus. Not directly comparable to lunar/Mars elevation."
+    }
+
 @router.get("/earth-environment")
 async def earth_environment(
     latitude: float = Query(ge=-90, le=90),
@@ -92,6 +112,14 @@ async def earth_environment(
         )
     measurements = {}
     errors = []
+    fallback_used = False
+    if isinstance(elev, Exception):
+        try:
+            async with httpx.AsyncClient(timeout=16, follow_redirects=True) as fallback_client:
+                elev = await _fallback_aster_elev(fallback_client, *key)
+                fallback_used = True
+        except Exception as fallback_exc:
+            errors.append({"source": "NASA ASTER GDEM backup", "reason": type(fallback_exc).__name__})
     if isinstance(power, Exception):
         errors.append({"source": "NASA POWER", "reason": type(power).__name__})
     else:
@@ -104,6 +132,7 @@ async def earth_environment(
         "latitude": key[0], "longitude": key[1], "retrieved_at": _time(),
         "measurements": measurements, "source_errors": errors,
         "source_count": (not isinstance(power, Exception)) + (not isinstance(elev, Exception)),
+        "elevation_fallback_used": fallback_used,
         "status": "available" if not errors else ("partial" if measurements else "upstream_unavailable"),
         "scientific_similarity_percent": None,
         "notes": [
