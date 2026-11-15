@@ -23,6 +23,8 @@ from app.api.routes.mro_context import router as mro_context_router
 from app.api.routes.analog_evidence import router as analog_evidence_router
 from app.api.routes.earth_surface import router as earth_surface_router
 from app.api.routes.mro_measured import router as mro_measured_router
+from app.api.routes.earth_processes import router as earth_processes_router
+from app.api.routes.science_coverage import router as science_coverage_router
 
 
 def create_app() -> FastAPI:
@@ -52,6 +54,8 @@ def create_app() -> FastAPI:
     application.include_router(analog_evidence_router)
     application.include_router(earth_surface_router)
     application.include_router(mro_measured_router)
+    application.include_router(earth_processes_router)
+    application.include_router(science_coverage_router)
     explorer_dir = Path(__file__).resolve().parent / "web"
     application.mount("/explorer-assets", StaticFiles(directory=explorer_dir), name="explorer-assets")
 
@@ -80,8 +84,9 @@ def create_app() -> FastAPI:
                 "/scientific/nasa-imagery?target=mars&limit=5",
                 "/science/earth-environment?latitude=19.4069&longitude=-155.2834",
                 "/science/earthdata-catalog?keyword=elevation&limit=3",
+                "/science/coverage",
+                "/science/mro-ctx-measured?site_id=perseverance",
                 "/science/terrain-survey/status",
-                "/science/earth-surface?latitude=19.4069&longitude=-155.2834",
                 "/science/terrain-survey/candidates?body=moon&site_id=apollo-15",
                 "/science/terrain-survey/candidates?body=mars&site_id=perseverance",
                 "/science/mro-ctx?site_id=perseverance&limit=2",
@@ -90,6 +95,7 @@ def create_app() -> FastAPI:
                 "/scientific/earth-events?limit=5",
                 "/scientific/planetary-products?target=moon&limit=5",
                 "/scientific/planetary-products?target=mars&limit=5",
+                "/science/earth-processes?latitude=19.4069&longitude=-155.2834",
             ]
             logger = logging.getLogger("planetrex.deploy_probe")
             async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=23.0) as client:
