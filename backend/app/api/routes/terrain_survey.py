@@ -7,7 +7,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Query
 
 router = APIRouter(prefix="/science/terrain-survey", tags=["Batch scientific terrain screening"])
-DEFAULT_PATH=Path(__file__).resolve().parents[3] / "data" / "terrain_survey.json"
+DEFAULT_PATH=Path(__file__).resolve().parents[4] / "data" / "terrain_survey.json"
 
 
 def read_dataset() -> dict | None:
