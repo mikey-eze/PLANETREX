@@ -22,8 +22,11 @@ def _get_json(client: httpx.Client, url: str, params: dict[str, Any]) -> dict[st
         if not isinstance(payload, dict):
             raise ValueError("Expected a JSON object")
         return payload
+    except httpx.HTTPStatusError as exc:
+        code=exc.response.status_code
+        raise NASAUpstreamError(f"NASA upstream returned HTTP {code}: {exc.response.text[:160]}") from exc
     except (httpx.HTTPError, ValueError) as exc:
-        raise NASAUpstreamError(f"Official NASA source unavailable or returned an invalid response: {type(exc).__name__}") from exc
+        raise NASAUpstreamError(f"NASA upstream unavailable or invalid response: {type(exc).__name__}") from exc
 
 
 def _timestamp() -> str:
