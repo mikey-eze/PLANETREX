@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 from app.api.routes.terrain_survey import read_dataset
 from app.api.routes.mro_measured import read_mro
+from app.api.routes.earth_discovery import read_field_profiles
 
 router=APIRouter(prefix="/science",tags=["Scientific data completeness and coverage"])
 
@@ -74,6 +75,8 @@ SOURCES=[
 def coverage()->dict:
     data=read_dataset()
     mro=read_mro()
+    terrestrial=read_field_profiles()
+    earth_profiles=terrestrial.get("profiles",[])
     measured_topography=bool(data and data.get("planetary_references") and
                              data.get("earth_terrain_profiles") and data.get("screenings"))
     rows=[]
@@ -84,8 +87,35 @@ def coverage()->dict:
                         if is_topo and measured_topography else "not_yet_comparable"),
              "scientific_similarity_percent":None,
              "validated_as_base_site":False}
+        # Existing source-backed *terrestrial* observations may support mission
+        # planning context even if no direct cross-planet physical metric exists.
+        kinds={
+          "topography":"NASA/METI ASTER regional elevation sampling",
+          "geology_mineralogy":"Macrostrat point lithology and map-unit age",
+          "temperature_illumination":"NASA POWER annual Earth T2M + surface shortwave; MODIS LST on demand",
+          "water_ice":"NASA POWER annual precipitation (does not prove local ice)",
+          "aeolian":"NASA POWER annual Earth wind speed (not Martian dust physics)",
+          "habitability":"NASA MODIS NDVI on-demand (vegetation, not extraterrestrial life)",
+          "subsurface":"No scientifically verified global cave/drillhole measurements",
+          "engineering":"Terrain relief proxy only; no soil bearing-strength data"
+        }
+        row["earth_evidence_available"]=kinds.get(row["dimension"])
+        row["earth_context_status"]="sourced_annual_Earth_climate_and_geology" if (
+            earth_profiles and row["dimension"] in
+            ("geology_mineralogy","temperature_illumination","water_ice","aeolian")) else (
+            "sourced_terrain_context" if is_topo and measured_topography else
+            "source_discovery_or_on_demand_only")
         rows.append(row)
     return {"status":"preliminary_research_system","dimensions":rows,
+            "source_backed_earth_field_profiles":len(earth_profiles),
+            "earth_profile_coverage":terrestrial.get("coverage",{}),
+            "earth_conditions_from_NASA_POWER_2025":bool(earth_profiles),
+            "earth_geology_source":"Macrostrat integrated geological maps",
+            "planetary_geology_reference_sources":[
+                "https://www.usgs.gov/publications/geologic-setting-apollo-15-samples",
+                "https://science.nasa.gov/resource/detailed-panorama-of-mars-jezero-crater-delta/",
+                "https://ares.jsc.nasa.gov/missions/msl/"
+            ],
             "measured_comparable_dimensions":int(measured_topography),
             "total_planned_dimensions":len(SOURCES),
             "dimension_coverage_fraction":round(int(measured_topography)/len(SOURCES),3),
