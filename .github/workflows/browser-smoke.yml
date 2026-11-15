@@ -6,6 +6,7 @@ on:
       - "backend/app/web/**"
       - "backend/app/main.py"
       - "backend/tests/browser_smoke.py"
+      - "backend/tests/observatory_smoke.py"
       - ".github/workflows/browser-smoke.yml"
   workflow_dispatch:
 jobs:
@@ -23,6 +24,11 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Check real desktop and mobile browser interactions
         run: cd backend && python tests/browser_smoke.py
+        env:
+          APP_ENV: test
+          PLAYWRIGHT_SCREENSHOTS: ${{ github.workspace }}/browser-shots
+      - name: Verify PLANETREX Mission Observatory interactions
+        run: cd backend && python tests/observatory_smoke.py
         env:
           APP_ENV: test
           PLAYWRIGHT_SCREENSHOTS: ${{ github.workspace }}/browser-shots
