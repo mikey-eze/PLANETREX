@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const rad=d=>d*Math.PI/180;
 const TAU=Math.PI*2;
-const state={body:"moon",mode:"dual",orbit:false,sites:[],reference:null,candidates:[],site:null,earth:null,evidence:null,filter:"all",requestToken:0,evidenceToken:0,snapshotToken:0,angles:{target:-0.5,earth:-0.3},pitches:{target:0.18,earth:0.18},zooms:{target:1,earth:1}};
+const state={body:"moon",mode:"dual",orbit:false,sites:[],reference:null,candidates:[],site:null,earth:null,evidence:null,filter:"all",requestToken:0,evidenceToken:0,snapshotToken:0,deepToken:0,modisToken:0,angles:{target:-0.5,earth:-0.3},pitches:{target:0.18,earth:0.18},zooms:{target:1,earth:1}};
 const globes={target:{canvas:$("target-globe"),texture:"moon",markers:[],hits:[],drag:null},earth:{canvas:$("earth-globe"),texture:"earth",markers:[],hits:[],drag:null}};
 const textures={};
 const sources={moon:"/visual/texture/moon.jpg",mars:"/visual/texture/mars.jpg",earth:"/visual/texture/earth.jpg"};
@@ -277,17 +277,29 @@ async function chooseSite(site){
  setText("telemetry-status","MEASURING TERRAIN CANDIDATES");
  centerGlobe("target",site);renderSites();renderCandidates();renderTelemetry();
  try{
-  const data=await json("/science/terrain-survey/candidates?body="+state.body+"&site_id="+encodeURIComponent(site.id)+"&limit=15");
+  let data;
+  try{
+   data=await json("/science/earth-discovery?body="+state.body+
+    "&site_id="+encodeURIComponent(site.id)+
+    "&environment="+encodeURIComponent($("earth-condition-filter").value)+"&limit=60");
+  }catch(error){
+   data=await json("/science/terrain-survey/candidates?body="+state.body+"&site_id="+encodeURIComponent(site.id)+"&limit=15");
+  }
   if(token!==state.requestToken)return;
   if(!data.ready||!data.results?.length){
    setText("earth-selection","No measured candidates for this site");
    setText("earth-source-status","NO MEASUREMENTS");setText("telemetry-status","DATA UNAVAILABLE");
    renderCandidates();renderTelemetry();return;
   }
-  state.reference=data.reference;state.candidates=data.results;
+  state.reference=data.planetary_reference||data.reference;state.candidates=data.results;
+  const total=data.total_matching_regions??data.count;
+  setText("earth-discovery-status",(data.batch_earth_evidence_ready?
+   "Annual NASA 2025 climate and mapped geology used for Earth evidence filters. ":
+   "Source evidence is being collected. ")+total+
+   " Earth terrain regions match this filter; terrain ranking remains measurement-based.");
   setText("target-source-status","NASA MEASURED DEM");
   setText("earth-source-status","ASTER SCREENING");
-  setText("telemetry-status",data.count+" TERRAIN CANDIDATES");
+  setText("telemetry-status",state.candidates.length+" CANDIDATES · "+(data.total_measured_terrain_regions||"GLOBAL")+" EARTH REGIONS SCREENED");
   renderCandidates();chooseEarth(state.candidates[0]);
  }catch(error){
   if(token!==state.requestToken)return;
@@ -301,7 +313,10 @@ async function chooseEarth(earth){
  setText("earth-selection",earth.name);
  setText("earth-coordinates",coords(earth)+" · "+(earth.search_stage==="coarse_to_fine_refinement"?"Refined Earth sample":"Global Earth sample"));
  centerGlobe("earth",earth);renderCandidates();renderTelemetry();
+ renderEarthEvidence();
  loadEarthSnapshot(earth);
+ loadEarthAnnualIfMissing(earth);
+ if(document.querySelector(".deep-more")?.open)loadMODISEvidence(earth);
  const token=++state.evidenceToken;
  try{
   const data=await json("/science/analog-evidence?body="+state.body+
@@ -343,7 +358,7 @@ function renderTelemetry(){
  setText("target-roughness",a?Number(a.height_std_m).toLocaleString():"—");
  setText("earth-roughness",b?Number(b.height_std_m).toLocaleString():"—");
  setText("distance-status",state.earth&&state.reference?
-  "Terrain only · 2 measured features. Lower distance means closer terrain variation, NOT a similarity %.":
+  "Measured terrain distance (2 features). Earth climate, vegetation and geology are shown separately; no unsupported similarity % is calculated.":
   "Select a site to compare measured terrain.");
  $("query-elevation").disabled=!state.earth;
  $("planet-data-link").href=state.reference?.source_url||"https://pds.nasa.gov/";
@@ -352,18 +367,21 @@ function renderTelemetry(){
   "Key limitations: "+Object.values(state.evidence.where_analogy_breaks_down.physical_environment_mismatches).join(" "):
   "Earth cannot reproduce reduced lunar/Martian gravity, lunar vacuum, thin Martian atmosphere, or space radiation.");
  renderMatrix();
+ renderEarthEvidence();
 }
 function renderCandidates(){
  const list=$("candidate-list"),query=$("candidate-search").value.trim().toLowerCase();
  list.replaceChildren();
  const domain=state.filter;
- const supported=domain==="all"||domain==="rover"||domain==="habitat"||domain==="drill";
+ const supported=domain==="all"||domain==="rover"||domain==="habitat"||domain==="drill"||domain==="isru";
  if(!supported){
   const p=document.createElement("p");p.className="muted";
   p.textContent="No verified "+(domain==="life"?"biosignature":"ISRU")+" dataset is used to rank these locations. Select ALL for terrain-based candidates.";
   list.append(p);setText("candidate-count","0 EVIDENCE-SUPPORTED RESULTS");return;
  }
- const rows=state.candidates.filter(c=>c.name.toLowerCase().includes(query)||coords(c).toLowerCase().includes(query));
+ const rows=state.candidates.filter(c=>
+  (domain!=="isru"||Boolean(c.earth_evidence?.geology_units?.length))&&
+  (c.name.toLowerCase().includes(query)||coords(c).toLowerCase().includes(query)));
  setText("candidate-count",rows.length+" TERRAIN CANDIDATES");
  if(!rows.length){const p=document.createElement("p");p.className="muted";p.textContent="No measured candidates match this search.";list.append(p);return}
  rows.forEach((item,i)=>{
@@ -372,7 +390,8 @@ function renderCandidates(){
   const rank=document.createElement("span");rank.className="rank";rank.textContent=String(state.candidates.indexOf(item)+1).padStart(2,"0");
   const inf=document.createElement("span");inf.className="candidate-info";
   const title=document.createElement("strong");title.textContent=item.name;
-  const sub=document.createElement("small");sub.textContent=coords(item)+" · "+(item.search_stage?"Refined":"Global")+" terrain";
+  const sub=document.createElement("small");sub.textContent=coords(item)+" · "+(item.earth_evidence?.source_count?
+    item.earth_evidence.source_count+" Earth data sources":"terrain measured");
   inf.append(title,sub);
   const score=document.createElement("span");score.className="score";score.textContent=Number(item.terrain_distance).toFixed(3);
   const small=document.createElement("small");small.textContent="DISTANCE ↓";score.append(small);
@@ -431,6 +450,10 @@ document.addEventListener("keydown",event=>{
 });
 $("query-elevation").addEventListener("click",queryElevation);
 $("candidate-search").addEventListener("input",renderCandidates);
+$("earth-condition-filter").addEventListener("change",()=>{if(state.site)chooseSite(state.site)});
+document.querySelector(".deep-more").addEventListener("toggle",event=>{
+ if(event.target.open&&state.earth)loadMODISEvidence(state.earth);
+});
 for(const b of document.querySelectorAll("#domain-filters .filter"))b.addEventListener("click",()=>{
  state.filter=b.dataset.domain;document.querySelectorAll("#domain-filters .filter").forEach(x=>x.classList.toggle("active",x===b));renderCandidates();
 });
