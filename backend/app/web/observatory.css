@@ -196,3 +196,119 @@ main {max-width:1850px;margin:0 auto}
  html {scroll-behavior:auto}
  *,*:before,*:after {animation:none!important;transition:none!important}
 }
+
+/* Layout revision: data is part of the page, never a floating popup.
+   DUAL: both globes in the first row, source-backed telemetry in the next row.
+   SINGLE: measured data LEFT, large selected planet globe RIGHT. */
+.mission-workspace{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:18px;
+ align-items:start;
+}
+.mission-workspace .celestial-grid{
+ grid-column:1;grid-row:1;
+ min-width:0;
+}
+.mission-workspace .telemetry{
+ position:static;
+ grid-column:1;grid-row:2;
+ z-index:auto;
+ width:100%;
+ max-height:none;
+ max-width:none;
+ min-width:0;
+ inset:auto;
+ margin:0;
+ display:flex;
+ flex-direction:column;
+ box-shadow:0 8px 24px rgba(26,80,122,.09);
+}
+.mission-workspace .telemetry[hidden]{display:none!important}
+.mission-workspace .telemetry-body{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ overflow:visible;
+ max-height:none;
+ gap:0;
+}
+.mission-workspace .popup-location{
+ grid-column:1 / -1;
+}
+.mission-workspace .summary-instrument{
+ grid-column:1;
+ border-right:1px solid var(--line);
+}
+.mission-workspace .candidate-instrument{
+ grid-column:2;
+ grid-row:2;
+}
+.mission-workspace .detail-fold{
+ grid-column:1 / -1;
+}
+.mission-workspace .candidate-list{
+ max-height:245px;
+}
+.mission-workspace.layout-single{
+ grid-template-columns:minmax(310px,410px) minmax(0,1fr);
+}
+.mission-workspace.layout-single .celestial-grid{
+ grid-column:2;
+ grid-row:1;
+ grid-template-columns:minmax(0,1fr);
+}
+.mission-workspace.layout-single .telemetry{
+ grid-column:1;
+ grid-row:1;
+ position:sticky;
+ top:14px;
+ max-height:calc(100dvh - 28px);
+}
+.mission-workspace.layout-single .telemetry-body{
+ display:block;
+ overflow-y:auto;
+ max-height:calc(100dvh - 104px);
+ overscroll-behavior:contain;
+}
+.mission-workspace.layout-single .summary-instrument{border-right:0}
+.mission-workspace.layout-single .candidate-list{max-height:230px}
+.mission-workspace.layout-single .orb-window{height:clamp(390px,50vw,670px)}
+.mission-workspace.layout-single .orb-window canvas{
+ width:min(calc(100% - 44px),610px);
+ max-height:calc(100% - 30px);
+}
+@media(max-width:980px){
+ .mission-workspace.layout-single{
+  grid-template-columns:minmax(0,1fr);
+ }
+ .mission-workspace.layout-single .celestial-grid{
+  grid-column:1;grid-row:1;
+ }
+ .mission-workspace.layout-single .telemetry{
+  position:static;
+  grid-column:1;grid-row:2;
+  max-height:none;
+ }
+ .mission-workspace.layout-single .telemetry-body{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  max-height:none;
+  overflow:visible;
+ }
+ .mission-workspace.layout-single .popup-location,.mission-workspace.layout-single .detail-fold{grid-column:1/-1}
+ .mission-workspace.layout-single .summary-instrument{grid-column:1;border-right:1px solid var(--line)}
+ .mission-workspace.layout-single .candidate-instrument{grid-column:2;grid-row:2}
+}
+@media(max-width:700px){
+ .mission-workspace .telemetry-body,
+ .mission-workspace.layout-single .telemetry-body{
+  display:block;
+  overflow:visible;
+ }
+ .mission-workspace .summary-instrument,
+ .mission-workspace.layout-single .summary-instrument{
+  border-right:0;
+ }
+ .mission-workspace.layout-single .orb-window{height:370px}
+ .mission-workspace.layout-single .orb-window canvas{width:min(calc(100% - 30px),355px)}
+}
