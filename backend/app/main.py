@@ -90,7 +90,7 @@ def create_app() -> FastAPI:
                         result = await client.get(url)
                         result.raise_for_status()
                     content = result.content
-                    if not content.startswith(b"\\xff\\xd8\\xff") or not 100000 < len(content) < 12000000:
+                    if not content.startswith(b"\xff\xd8\xff") or not 100000 < len(content) < 12000000:
                         raise ValueError("Upstream texture is not a valid-size JPEG")
                     texture_cache[body] = content
                 except (httpx.HTTPError, ValueError) as exc:
