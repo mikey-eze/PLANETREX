@@ -1,3 +1,13 @@
+## Launch a public browser preview
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mikey-eze/PLANETREX)
+
+The repository includes `render.yaml`, which deploys a Python FastAPI service from `backend/` and serves the experimental explorer at `/explorer`. Review and approve the service in Render. When deployment completes, open `https://<your-render-service>.onrender.com/explorer`.
+
+This is a browser preview of the **incomplete research pilot**. It is not a verified scientific analog discovery engine. The free service's filesystem is ephemeral, so local SQLite measurements are not reliable permanent cloud storage. No NASA batch collection runs on startup.
+
+---
+
 # PLANETREX — Moon-first planetary explorer (navigation fix)
 
 **New canonical interface:** open `http://127.0.0.1:8000/explorer` after starting FastAPI. It starts on the Moon; Mars is selectable. Click labeled points or arbitrary mapped planetary coordinates to transition to an interactive Earth with mapped regions and stored evidence (if any). No scientific similarities are fabricated.
