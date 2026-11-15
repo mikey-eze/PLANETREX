@@ -49,13 +49,14 @@ def check():
                     assert canvas["x"]>=region["x"]-2
                     assert canvas["x"]+canvas["width"]<=region["x"]+region["width"]+2
                 stages=page.locator("#stages").bounding_box()
-                sidebar=page.locator("#telemetry").bounding_box()
-                assert stages and sidebar, "Missing globe stages or information sidebar"
-                if label=="desktop":
-                    assert sidebar["x"] >= stages["x"]+stages["width"]-3, "Telemetry must be BESIDE globes"
-                    assert abs(sidebar["y"]-stages["y"])<3, "Sidebar must start level with globes"
-                else:
-                    assert sidebar["y"] >= stages["y"]+stages["height"]-3, "Mobile sidebar must follow globes"
+                popup=page.locator("#telemetry").bounding_box()
+                assert stages and popup, "Missing globe stage or data popup"
+                assert popup["y"] < stages["y"]+stages["height"], "Data must pop up ABOVE the globes, not below"
+                assert popup["x"]+popup["width"] <= viewport["width"]+2
+                assert popup["y"]+popup["height"] <= viewport["height"]+2
+                assert page.locator("#drawer-toggle").is_visible(), "Popup close button must be visible"
+                assert page.locator("#earth-temp").is_visible(), "Earth temperature status must be readable"
+                assert page.locator("#distance-score").is_visible(), "Terrain score must be visible"
                 page.screenshot(path=str(SHOTS/(label+"-observatory-dual.png")),full_page=True)
                 page.locator("#mode-target").click()
                 assert page.locator("#target-globe").is_visible()
@@ -75,8 +76,10 @@ def check():
                 assert page.locator("#candidate-list .candidate").count()>=1
                 page.locator("#candidate-list .candidate").last.click()
                 page.locator("#drawer-toggle").click()
-                assert not page.locator("#telemetry-body").is_visible()
-                page.locator("#drawer-toggle").click()
+                assert not page.locator("#telemetry").is_visible(), "Close button must clear the globe view"
+                assert page.locator("#show-data").get_attribute("aria-expanded")=="false"
+                page.locator("#show-data").click()
+                assert page.locator("#telemetry").is_visible(), "View Data must reopen the popup"
                 assert page.locator("#telemetry-body").is_visible()
                 page.locator("#orbit-switch").click()
                 assert page.locator("#orbit-switch").get_attribute("aria-pressed")=="true"
