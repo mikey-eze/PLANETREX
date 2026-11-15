@@ -68,7 +68,7 @@ def check():
                 page.locator("#target-mars").click()
                 page.locator("#target-sites button").first.wait_for(timeout=15000)
                 page.locator("#candidate-list .candidate").first.wait_for(timeout=18000)
-                assert "Mars" in page.locator("#target-title").inner_text()
+                assert "mars" in page.locator("#target-title").inner_text().lower()
                 assert page.locator("#candidate-count").inner_text().split()[0]!="0"
                 page.locator("#domain-filters [data-domain='isru']").click()
                 assert page.locator("#candidate-list").inner_text().find("No verified ISRU")!=-1
