@@ -55,10 +55,24 @@ def check():
                 assert page.locator("#earth-temp").is_visible(), "Earth temperature must be readable"
                 assert page.locator("#distance-score").is_visible(), "Terrain distance must be readable"
                 # Texture renderer uses per-pixel spherical sampling, not a blocky tile mosaic.
-                page.wait_for_function(
-                    "() => ['earth','target'].every(k => document.getElementById(k+'-globe').dataset.textureQuality === 'full-resolution')",
-                    timeout=25000
-                )
+                try:
+                    page.wait_for_function(
+                        "() => ['earth','target'].every(k => document.getElementById(k+'-globe').dataset.textureQuality === 'full-resolution')",
+                        timeout=18000
+                    )
+                except Exception:
+                    print("TEXTURE_DIAGNOSTIC", page.evaluate("""() => ({
+                        quality: ['earth','target'].map(k => document.getElementById(k+'-globe').dataset.textureQuality),
+                        sources: Object.fromEntries(Object.entries(textures).map(([k,v]) => [k,{
+                            src:v.currentSrc,complete:v.complete,width:v.naturalWidth,
+                            fallback:v.fallbackUsed||false,pixels:!!texturePixels[k]
+                        }]))
+                    })"""))
+                    print("PROXY_DIAGNOSTIC", page.evaluate("""async () => await Promise.all(['moon','earth'].map(async body=>{
+                        const r=await fetch('/visual/texture/'+body+'.jpg');
+                        return {body,status:r.status,contentType:r.headers.get('content-type'),length:(await r.arrayBuffer()).byteLength};
+                    }))"""))
+                    raise
                 page.screenshot(path=str(SHOTS/(label+"-observatory-dual.png")),full_page=True)
                 page.locator("#mode-target").click()
                 assert page.locator("#target-globe").is_visible()
