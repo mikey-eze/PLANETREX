@@ -64,7 +64,12 @@ def create_app() -> FastAPI:
     @application.get("/", include_in_schema=False)
     def homepage() -> RedirectResponse:
         """Make the public Render domain open the explorer directly."""
-        return RedirectResponse(url="/explorer", status_code=307)
+        return RedirectResponse(url="/observatory", status_code=307)
+
+    @application.get("/observatory", include_in_schema=False)
+    def observatory() -> FileResponse:
+        """Mission observatory: dual planetary stages and source-backed telemetry."""
+        return FileResponse(explorer_dir / "observatory.html")
 
     @application.get("/explorer", include_in_schema=False)
     def explorer() -> FileResponse:
@@ -78,7 +83,7 @@ def create_app() -> FastAPI:
             await asyncio.sleep(3)
             port = os.environ.get("PORT", "10000")
             paths = [
-                "/", "/health", "/explorer", "/explorer-assets/explorer.js",
+                "/", "/health", "/observatory", "/explorer", "/explorer-assets/observatory.js", "/explorer-assets/observatory.css", "/explorer-assets/explorer.js",
                 "/exploration/sites?body=moon", "/science/profiles?body=earth",
                 "/science/analog-screening?body=moon&site_id=apollo-15",
                 "/science/analog-screening?body=mars&site_id=perseverance",
