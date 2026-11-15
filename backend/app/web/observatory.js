@@ -307,7 +307,60 @@ async function chooseSite(site){
   setText("telemetry-status","SOURCE ERROR");
  }
 }
+
+const eightDomainLabels={
+ geology_mineralogy:"Geology & mineralogy",
+ topography:"Terrain & topography",
+ temperature_illumination:"Temperature & illumination",
+ water_ice:"Water & ice",
+ dust_wind:"Dust, wind & surface processes",
+ biology_habitability:"Biology & habitability",
+ caves_subsurface:"Caves & subsurface",
+ engineering_resources:"Engineering & resources"
+};
+async function loadEightDomainComparison(earth){
+ const target=$("eight-domain-comparison");
+ if(!target||!state.site)return;
+ const body=state.body,site=state.site.id,earthId=earth.id;
+ const token=++state.deepToken;
+ target.replaceChildren();
+ const waiting=document.createElement("p");waiting.className="muted";
+ waiting.textContent="Loading saved eight-domain evidence…";target.append(waiting);
+ try{
+  const data=await json("/science/analog-catalog/site?body="+encodeURIComponent(body)+
+    "&site_id="+encodeURIComponent(site)+"&earth_id="+encodeURIComponent(earthId));
+  if(token!==state.deepToken||state.earth?.id!==earthId)return;
+  target.replaceChildren();
+  const headline=document.createElement("p");
+  headline.textContent="Measured terrain similarity: "+data.terrain_similarity_percent+
+    "% · Eight-domain coverage: "+data.coverage_percent+"%";
+  target.append(headline);
+  const note=document.createElement("p");note.className="simple-note";
+  note.textContent="Overall 8-domain similarity: NOT YET CALCULABLE. Terrain percentage is a descriptive index, not a scientifically validated match.";
+  target.append(note);
+  for(const [id,label] of Object.entries(eightDomainLabels)){
+   const domain=data.domain_results[id];
+   const item=document.createElement("div");item.className="domain-card";
+   const title=document.createElement("strong");title.textContent=label;
+   const status=document.createElement("p");
+   status.textContent=id==="topography"?
+     "Measured terrain index: "+data.terrain_similarity_percent+"% · 2 paired elevation descriptors":
+     domain?.status==="categorical_context_only"?
+     "Mapped rock-category context available · no quantitative mineral percentage":
+     "Insufficient paired planetary/Earth measurements · percentage unavailable";
+   item.append(title,status);target.append(item);
+  }
+ }catch(error){
+  if(token!==state.deepToken||state.earth?.id!==earthId)return;
+  target.replaceChildren();
+  const note=document.createElement("p");note.className="muted";
+  note.textContent="Eight-domain catalog not generated or deployed. No similarity percentage can be reported yet.";
+  target.append(note);
+ }
+}
+
 async function chooseEarth(earth){
+ loadEightDomainComparison(earth);
  state.earth=earth;state.evidence=null;
  openData();
  setText("earth-selection",earth.name);
