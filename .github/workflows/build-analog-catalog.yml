@@ -6,6 +6,8 @@ on:
       - 'backend/app/pipeline/build_analog_catalog.py'
       - 'backend/app/api/routes/deep_comparison.py'
       - 'backend/tests/test_analog_catalog.py'
+      - 'backend/tests/test_paired_domain_scoring.py'
+      - 'backend/app/pipeline/paired_domain_scoring.py'
       - 'data/terrain_survey.json'
       - 'data/earth_science_profiles.json'
 jobs:
@@ -22,7 +24,7 @@ jobs:
         run: pip install -r backend/requirements.txt
       - name: Validate scientific invariants
         working-directory: backend
-        run: python -m pytest -q tests/test_analog_catalog.py
+        run: python -m pytest -q tests/test_analog_catalog.py tests/test_paired_domain_scoring.py
       - name: Generate saved discovery catalog
         working-directory: backend
         run: python -m app.pipeline.build_analog_catalog --output ../data/analog_catalog.json
