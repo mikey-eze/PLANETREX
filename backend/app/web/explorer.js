@@ -178,7 +178,7 @@ function details(){
  if(state.selected && typeof state.selected.terrain_distance==="number"){
   const ref=state.reference;
   const label=document.createElement("p");label.textContent="Measured NASA–ASTER terrain screening · lower distance = closer topographic variation. Not a physical similarity %.";d.append(label);
-  const value=document.createElement("p");value.textContent="Terrain distance: "+state.selected.terrain_distance.toFixed(4)+" (uncalibrated, dimensionless). Coverage: 2 of 8 planned feature dimensions.";d.append(value);
+  const value=document.createElement("p");value.textContent="Terrain distance: "+state.selected.terrain_distance.toFixed(4)+" (uncalibrated, dimensionless). Two terrain metrics, one of eight planned scientific dimensions.";d.append(value);
   const row=document.createElement("p");row.textContent="Earth 24km window: relief "+state.selected.stats.relief_m+"m, vertical SD "+state.selected.stats.height_std_m+"m.";d.append(row);
   if(ref?.stats){const r=document.createElement("p");r.textContent=ref.name+" NASA "+ref.dataset+": relief "+ref.stats.relief_m+"m; vertical SD "+ref.stats.height_std_m+"m.";d.append(r);}
   for(const source of [ref?.source_url,state.selected.source_url]){
