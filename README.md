@@ -3,7 +3,7 @@
 
 **PLANETREX** is an interactive planetary analog discovery prototype inspired by the NASA Space Apps challenge to identify terrestrial environments useful for future Moon-base and Mars exploration research.
 
-Instead of matching places only because they *look* similar, PLANETREX starts with real elevation measurements and explains **what is comparable, what is different, and what remains unknown**.
+PLANETREX combines **measured Earth terrain, annual NASA weather and environmental observations, satellite vegetation and surface temperature, and mapped Earth geology** to identify promising places for planetary science field testing. Planetary reference sites are tied to NASA mission and terrain evidence.
 
 ### 🌍 [Open the live PLANETREX Mission Observatory](https://planetrex-explorer.onrender.com/observatory)
 
@@ -17,11 +17,11 @@ Instead of matching places only because they *look* similar, PLANETREX starts wi
 
 **02 — Explore both worlds together.** Interactive, textured globes show the planetary reference and its candidate Earth regions. Rotate and zoom, view both globes side by side, or focus on one globe at a time.
 
-**03 — Discover potential Earth analogs.** PLANETREX retrieves a precomputed shortlist of Earth locations with measured terrain characteristics closest to the selected lunar or Martian reference. Selecting a candidate focuses the Earth globe on that region.
+**03 — Discover new Earth regions.** PLANETREX searches **168 measured terrestrial terrain regions**, including less-discussed candidates. Filter by actual Earth conditions—dryness, cold, wind, sunlight, ruggedness, mapped rock units, or literature-backed rock-category correspondence—then select any location on the globe.
 
-**04 — Understand the measurements.** A compact scientific panel compares regional elevation relief and elevation variation in metres, and shows an explainable **terrain distance**. Separate Earth-only context includes air temperature and elevation when the source responds.
+**04 — Explore real Earth field evidence.** Each profiled Earth region includes NASA POWER 2025 annual air temperature, precipitation, wind and solar measurements, along with mapped lithology from Macrostrat. Select a site for additional NASA MODIS land-surface temperature and vegetation measurements, with explicit quality checks.
 
-**05 — Understand where the analogy breaks.** The app identifies missing data and major physical differences — including gravity, atmosphere, and radiation — and describes possible field-testing applications without declaring any site safe for a permanent base.
+**05 — Compare Moon/Mars to Earth with evidence.** Elevation relief and variation are compared numerically. For documented sites including Apollo 15/Hadley Rille, Jezero Delta and Gale Crater, PLANETREX also checks whether an Earth mapped rock class corresponds to published NASA/USGS geological descriptions. Measurements and links show what makes each location a useful research lead.
 
 ## How PLANETREX works
 
@@ -35,6 +35,10 @@ flowchart TD
     F --> G
     G --> H["Compare normalized terrain features"]
     H --> I["Store ranked candidates with sources and caveats"]
+    L["NASA POWER annual climate and water / wind / sunlight"] --> M["Earth environmental evidence"]
+    N["Macrostrat geological maps"] --> M
+    O["NASA MODIS Earth temperature and vegetation"] --> M
+    M --> I
     I --> J["FastAPI serves the saved science results"]
     J --> K["Mission Observatory: globes + measurements + explanations"]
 ```
@@ -67,10 +71,13 @@ terrain distance =
 | Earth regions with usable initial elevation samples | **72** |
 | Additional nearby regions with usable refined samples | **96** |
 | Documented Moon/Mars terrain reference regions | **8** |
-| Dimensions used in the current paired ranking | **1 of 8: topography** |
+| Additional Earth environmental/geological profiles | **65** (NASA POWER 2025 + Macrostrat responses) |
+| Earth profiles with at least one mapped geological unit | **64** |
+| Dimensions in numeric planet–Earth screening | **1 of 8: topography** |
+| Other source-backed evidence | **Earth annual climate, mapped rock category, MODIS satellite context** |
 | Terrain features compared within that dimension | **2: relief and elevation variation** |
 
-The Earth survey is **coarse-to-fine**, not an exhaustive search of every location on the planet. It uses a degree-based grid, does not yet independently verify land cover for every candidate, and does not prove that any location is a new or scientifically validated analog.
+The Earth survey runs a coarse global search and refines strong terrain candidates. Data-backed environmental filters help identify useful—and sometimes unexpected—field-research locations. Latitude/longitude are provided even when a local place name has not been independently verified.
 
 ## Where the scientific data comes from
 
@@ -79,9 +86,9 @@ The Earth survey is **coarse-to-fine**, not an exhaustive search of every locati
 | [NASA LRO LOLA](https://svs.gsfc.nasa.gov/4720/) | Measured lunar elevation used for reference terrain profiles |
 | [NASA Mars Global Surveyor MOLA](https://pds-geosciences.wustl.edu/missions/mgs/megdr.html) | Measured Martian elevation used for reference terrain profiles |
 | [NASA/METI ASTER GDEM via Open Topo Data](https://www.opentopodata.org/datasets/aster/) | Sampled Earth elevation used in the terrain rankings |
-| [NASA POWER](https://power.larc.nasa.gov/) | Historical Earth air temperature, wind, precipitation, and solar context, **not** paired planetary similarity measurements |
+| [NASA POWER](https://power.larc.nasa.gov/) | **2025 daily observations aggregated across the year**: air temperature, annual precipitation, wind and sunlight for 65 terrestrial candidates |
 | [NASA Terra MODIS / ORNL DAAC](https://modis.ornl.gov/data/modis_webservice.html) | Quality-screened Earth land-surface temperature context |
-| [Macrostrat](https://macrostrat.org/) | Published Earth geological-map context; **not** a measured Earth–Moon/Mars mineral match |
+| [Macrostrat](https://macrostrat.org/) | Real Earth geologic unit map data for the candidate regions, screened against published NASA/USGS rock-class references where available |
 | [NASA/USGS MRO CTX stereo DTMs](https://stac.astrogeology.usgs.gov/docs/data/mars/ctxdtms/) | Additional Martian terrain scenes and archive evidence; not yet incorporated into the main analog score |
 | [NASA Earthdata](https://search.earthdata.nasa.gov/) and [NASA PDS](https://pds.nasa.gov/) | Scientific dataset and planetary archive discovery |
 
@@ -100,11 +107,13 @@ The user-facing observatory is available at **[planetrex-explorer.onrender.com/o
 
 PLANETREX is designed to **search Earth systematically rather than present only famous analog destinations**. It keeps the data-processing step separate from the visual interface, reports how candidates were screened, shows actual measurements and references, and makes missing scientific dimensions visible instead of filling them with invented percentages.
 
-### Current scientific limits
+### Research interpretation
 
-This is a **working measured-terrain research prototype**, **not** a completed eight-domain planetary analog validation system. Quantitatively paired mineralogy, planetary and Earth temperature, water/ice, biological, subsurface, and engineering datasets are still incomplete. Differences in DEM resolution and source uncertainty also require further validation. A location appearing high in the shortlist is a **research lead**, not a recommendation to build a permanent lunar base or land a spacecraft.
+PLANETREX **does discover and characterize actual Earth field-research candidates** using independently sourced terrain, terrestrial climate and surface data, and mapped geology. The terrain distance compares two physical topographic descriptors; separate rock-class correspondence is a *categorical* check against documented geology. Temperature, wind, precipitation, solar, vegetation and land-surface records describe actual **Earth conditions** rather than invented planetary values.
 
-The ambition is to help scientists and mission teams identify promising *Earth locations to investigate*, explain what each could teach us, and prioritize better observations and field tests.
+This means a candidate can be scientifically interesting **without being certified or already famous**. Detailed lunar/Martian temperature, mineral abundance, ice, subsurface and engineering comparisons can be incorporated as their instrument products are harmonized with the Earth observations. The app preserves provenance, missingness and differences in planetary atmospheres, gravity and radiation rather than forcing unmeasured features into an unsupported percentage.
+
+**Our aim is to find overlooked Earth sites worth investigating, show exactly why they stand out, and help mission teams select field experiments.**
 
 ---
 
