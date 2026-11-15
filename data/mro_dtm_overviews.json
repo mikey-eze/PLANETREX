@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-15T07:58:20.089451+00:00",
+  "source": "NASA / USGS MRO CTX controlled stereo Digital Terrain Models",
+  "collection": "mro_ctx_controlled_usgs_dtms",
+  "source_url": "https://stac.astrogeology.usgs.gov/docs/data/mars/ctxdtms/",
+  "status": "batch_high_resolution_context_only",
+  "used_in_analog_scoring": false,
+  "sites": [
+    {
+      "site_id": "perseverance",
+      "site_name": "Jezero Crater",
+      "latitude": 18.44463,
+      "longitude": 77.45088,
+      "dtms": [
+        {
+          "id": "P18_007925_1987_XN_18N282W__P19_008650_1987_XI_18N282W",
+          "asset_url": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/usgs/P18_007925_1987_XN_18N282W__P19_008650_1987_XI_18N282W/P18_007925_1987_XN_18N282W__P19_008650_1987_XI_18N282W_dtm.tif",
+          "bbox": [
+            77.21281144352704,
+            17.757789235602306,
+            77.90597708129924,
+            19.342308862718042
+          ],
+          "stac_item_url": "https://g6goyz4w56.execute-api.us-west-2.amazonaws.com/prod/collections/mro_ctx_controlled_usgs_dtms/items/P18_007925_1987_XN_18N282W__P19_008650_1987_XI_18N282W",
+          "measurement": {
+            "nominal_post_spacing_m": 20,
+            "sampled_grid_shape": [
+              180,
+              180
+            ],
+            "valid_sample_count": 22502,
+            "sample_count": 32400,
+            "valid_pixel_fraction": 0.6945,
+            "height_p05_m": -2658.86,
+            "height_median_m": -2247.69,
+            "height_p95_m": -1655.14,
+            "robust_relief_p95_p05_m": 1003.71,
+            "height_std_sample_m": 336.55,
+            "raster_width": 2013,
+            "raster_height": 4622,
+            "crs": "PROJCS[\"Mars (2015) - Sphere / Ocentric / Equirectangular, clon = 0\",GEOGCS[\"Mars (2015) - Sphere / Ocentric\",DATUM[\"Mars (2015) - Sphere\",SPHEROID[\"Mars (2015) - Sphere\",3396190,0,AUTHORITY[\"IAU\",\"49900\"]],AUTHORITY[\"IAU\",\"49900\"]],PRIMEM[\"Reference Meridian\",0,AUTHORITY[\"IAU\",\"49900\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"IAU\",\"49900\"]],PROJECTION[\"Equirectangular\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"IAU\",\"49910\"]]",
+            "map_bounds": [
+              4577133.445,
+              1052985.324,
+              4617721.474,
+              1146178.502
+            ],
+            "sampled_footprint": "entire DTM scene as nearest-neighbor 180x180 overview; not the 24km planetary comparison window",
+            "vertical_quality": "not calibrated against MOLA control/QA files; scene-wide overview is not reliable for landing-hazard decisions"
+          },
+          "status": "measured_scene_overview",
+          "planet": "Mars",
+          "unit": "m",
+          "source_processing": "NASA/USGS CTX stereo aligned to MOLA"
+        },
+        {
+          "id": "P05_002809_1975_XI_17N283W__P13_006000_1974_XI_17N283W",
+          "asset_url": "https://astrogeo-ard.s3-us-west-2.amazonaws.com/mars/mro/ctx/controlled/usgs/P05_002809_1975_XI_17N283W__P13_006000_1974_XI_17N283W/P05_002809_1975_XI_17N283W__P13_006000_1974_XI_17N283W_dtm.tif",
+          "bbox": [
+            75.91771659930976,
+            14.65135146010114,
+            77.0480588583663,
+            19.777888275132497
+          ],
+          "stac_item_url": "https://g6goyz4w56.execute-api.us-west-2.amazonaws.com/prod/collections/mro_ctx_controlled_usgs_dtms/items/P05_002809_1975_XI_17N283W__P13_006000_1974_XI_17N283W",
+          "measurement": {
+            "nominal_post_spacing_m": 20,
+            "sampled_grid_shape": [
+              180,
+              180
+            ],
+            "valid_sample_count": 13506,
+            "sample_count": 32400,
+            "valid_pixel_fraction": 0.4169,
+            "height_p05_m": -2508.97,
+            "height_median_m": -1845.59,
+            "height_p95_m": -437.34,
+            "robust_relief_p95_p05_m": 2071.63,
+            "height_std_sample_m": 628.55,
+            "raster_width": 2986,
+            "raster_height": 13854,
+            "crs": "PROJCS[\"Mars (2015) - Sphere / Ocentric / Equirectangular, clon = 0\",GEOGCS[\"Mars (2015) - Sphere / Ocentric\",DATUM[\"Mars (2015) - Sphere\",SPHEROID[\"Mars (2015) - Sphere\",3396190,0,AUTHORITY[\"IAU\",\"49900\"]],AUTHORITY[\"IAU\",\"49900\"]],PRIMEM[\"Reference Meridian\",0,AUTHORITY[\"IAU\",\"49900\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"IAU\",\"49900\"]],PROJECTION[\"Equirectangular\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"IAU\",\"49910\"]]",
+            "map_bounds": [
+              4500954.076,
+              894535.962,
+              4560809.416,
+              1172243.895
+            ],
+            "sampled_footprint": "entire DTM scene as nearest-neighbor 180x180 overview; not the 24km planetary comparison window",
+            "vertical_quality": "not calibrated against MOLA control/QA files; scene-wide overview is not reliable for landing-hazard decisions"
+          },
+          "status": "measured_scene_overview",
+          "planet": "Mars",
+          "unit": "m",
+          "source_processing": "NASA/USGS CTX stereo aligned to MOLA"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "site_id": "curiosity",
+      "site_name": "Gale Crater",
+      "latitude": -4.6,
+      "longitude": 137.4,
+      "dtms": [],
+      "errors": []
+    }
+  ],
+  "warnings": [
+    "DTM scenes may be near but not contain the exact rover landing point.",
+    "Only source raster height overview is sampled; check CTX-MOLA QA, artifacts and georeferencing before quantitative comparisons.",
+    "MRO CTX 20m grid post spacing is not equivalent to true spatial resolution or 24km regional MOLA/ASTER sample footprint."
+  ],
+  "measured_dtm_count": 2
+}
