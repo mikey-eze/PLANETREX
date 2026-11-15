@@ -50,6 +50,9 @@ def build(terrain:dict, earth_profiles:dict) -> dict:
                                  "earth_source_url":candidate["source_url"]})
                 differences.append(abs(math.log1p(pv)-math.log1p(ev)))
             terrain_distance=round(.6*differences[0]+.4*differences[1],5)
+            # An explicitly heuristic similarity index, NOT calibrated probability.
+            # Its coverage is always displayed alongside the score.
+            terrain_similarity_percent=round(100*math.exp(-terrain_distance),1)
             field=profiles.get(candidate["id"],{})
             measurements=field.get("earth_measurements",{})
             geo=measurements.get("geology",{})
@@ -74,6 +77,9 @@ def build(terrain:dict, earth_profiles:dict) -> dict:
                 "earth_id":candidate["id"],"name":candidate.get("name",candidate["id"]),
                 "latitude":candidate["latitude"],"longitude":candidate["longitude"],
                 "terrain_distance":terrain_distance,
+                "measured_terrain_similarity_percent":terrain_similarity_percent,
+                "score_definition":"100 * exp(-terrain_distance); descriptive heuristic, not scientific validation",
+                "domain_coverage_percent":12.5,
                 "paired_domains":1,"total_domains":8,"paired_features":2,
                 "earth_environmental_context":context,
                 "domains":domains,
