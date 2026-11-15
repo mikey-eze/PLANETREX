@@ -43,7 +43,7 @@ def summarize_power(data:dict)->dict:
         val=sum(nums) if definition["aggregation"]=="sum" else sum(nums)/len(nums)
         out[code]={**definition,"value":round(val,3),"sample_days":len(nums),
                    "status":"source_derived","period":"2025-01-01/2025-01-31",
-                   "source":"NASA POWER HY (Earth)","source_url":URL}
+                   "source":"NASA POWER AG (Earth)","source_url":URL}
     return out
 
 @router.get("/earth-processes")
@@ -52,7 +52,7 @@ async def earth_processes(
     key=(round(latitude,3),round(longitude,3))
     if key in CACHE and time.monotonic()-CACHE[key][0]<24*3600:
         return {**CACHE[key][1],"cache_status":"cached"}
-    params={"parameters":",".join(PARAMS),"community":"HY",
+    params={"parameters":",".join(PARAMS),"community":"AG",
             "latitude":key[0],"longitude":key[1],
             "start":"20250101","end":"20250131","format":"JSON"}
     try:
@@ -70,7 +70,7 @@ async def earth_processes(
         raise HTTPException(502,detail=f"NASA POWER surface process data unavailable: {type(exc).__name__}") from exc
     result={
         "latitude":key[0],"longitude":key[1],
-        "source":"NASA POWER hydrology (HY)",
+        "source":"NASA POWER (AG terrestrial environmental data)",
         "source_url":DOCUMENTATION,
         "retrieved_at":datetime.now(timezone.utc).isoformat(),
         "period":"January 2025","parameters":data,
