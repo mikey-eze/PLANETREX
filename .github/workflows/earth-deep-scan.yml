@@ -1,0 +1,56 @@
+name: PLANETREX Earth science evidence batch
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/app/pipeline/earth_deep_scan.py'
+      - '.github/workflows/earth-deep-scan.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  earth-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install scientific source clients
+        run: python -m pip install -r backend/requirements.txt
+      - name: Fetch NASA 2025 annual climate and geological units for measured Earth candidate regions
+        run: cd backend && python -m app.pipeline.earth_deep_scan --input ../data/terrain_survey.json --output ../data/earth_science_profiles.json --max-points 65
+      - name: Verify real Earth source records
+        run: |
+          python - <<'PY'
+          import json
+          path='data/earth_science_profiles.json'
+          d=json.load(open(path))
+          assert len(d['profiles']) >= 20
+          assert d['coverage']['with_annual_NASA_power'] >= 5
+          assert all('scientific_similarity_percent' not in p for p in d['profiles'])
+          assert d['scientific_similarity_percent'] is None
+          assert all(isinstance(p['errors'],list) for p in d['profiles'])
+          assert len(set(p['id'] for p in d['profiles']))==len(d['profiles'])
+          print('Sourced annual climate:',d['coverage']['with_annual_NASA_power'])
+          print('Geologic map source responses:',d['coverage']['with_geologic_source_response'])
+          PY
+      - name: Commit the measured evidence dataset
+        run: |
+          git config user.name "planetrex-science-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/earth_science_profiles.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: Earth environment and geological evidence [skip ci]"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
+      - name: Upload research evidence file
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: planetrex-earth-science-profiles
+          path: data/earth_science_profiles.json
+          if-no-files-found: warn
