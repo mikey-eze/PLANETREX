@@ -62,6 +62,8 @@ async def earth_processes(
             payload=response.json()
         data=summarize_power(payload)
     except httpx.HTTPStatusError as exc:
+        import logging
+        logging.getLogger("planetrex.power").warning("NASA POWER HY rejected parameters %s: HTTP %d response=%s", ",".join(PARAMS), exc.response.status_code, exc.response.text[:850])
         raise HTTPException(status_code=502,
             detail=f"NASA POWER surface process request returned upstream HTTP {exc.response.status_code}") from exc
     except (httpx.HTTPError,ValueError) as exc:
