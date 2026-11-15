@@ -1,7 +1,7 @@
 "use strict";
 // Moon-first interactive research viewer. Navigation sites are not similarity claims.
 const $=id=>document.getElementById(id);
-const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0,evidence:null,evidenceLoading:false,evidenceSeq:0,surface:null,surfaceLoading:false,surfaceSeq:0,ctxMeasured:null,ctxMeasuredLoading:false,ctxMeasuredSeq:0};
+const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0,surveyMode:"qualitative",mro:null,mroLoading:false,mroSeq:0,evidence:null,evidenceLoading:false,evidenceSeq:0,surface:null,surfaceLoading:false,surfaceSeq:0,ctxMeasured:null,ctxMeasuredLoading:false,ctxMeasuredSeq:0,processes:null,processLoading:false,processSeq:0};
 const canvas=$("globe"),ctx=canvas.getContext("2d");
 const TAU=Math.PI*2;
 const rad=v=>v*Math.PI/180;
@@ -195,6 +195,24 @@ function details(){
      }
    }else if(state.selected){const p=document.createElement("p");p.textContent="Surface temperature evidence loads on Earth region selection.";d.append(p);}
  }
+ if(state.view==="earth"){
+  const heading=document.createElement("b");heading.textContent="NASA POWER · surface, water and dust/wind processes";d.append(heading);
+  if(state.processLoading){
+   const p=document.createElement("p");p.textContent="Loading Earth-only NASA hydrology and wind observations…";d.append(p);
+  }else if(state.processes){
+   if(state.processes.error){
+     const p=document.createElement("p");p.textContent="NASA POWER additional surface data unavailable: "+state.processes.error;d.append(p);
+   }else{
+     for(const entry of Object.values(state.processes.parameters||{})){
+      const p=document.createElement("p");
+      p.textContent=entry.label+": "+(entry.value==null?"No valid observations":entry.value+" "+entry.unit)+
+         (entry.sample_days?" · "+entry.sample_days+" January 2025 daily values":"");
+      d.append(p);
+     }
+     const disclaimer=document.createElement("p");disclaimer.textContent="These are Earth gridded, model/satellite-informed indicators. No Mars/Moon temperature, soil-water, or wind similarity is inferred.";d.append(disclaimer);
+    }
+  }
+ }
  if(state.view==="earth" && state.surveyMode==="measured"){
   const heading=document.createElement("b");heading.textContent="Scientific evidence & limitations";d.append(heading);
   if(state.evidenceLoading){const p=document.createElement("p");p.textContent="Building source-backed comparison report…";d.append(p);}
@@ -234,18 +252,18 @@ function details(){
 }
 function paint(){updateHeader();renderList();details();render();}
 async function loadPlanet(target){
- const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,evidence:null,evidenceLoading:false,surface:null,surfaceLoading:false,ctxMeasured:null,ctxMeasuredLoading:false,angle:-.5,pitch:.18,zoom:1});
+ const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,surveyMode:"qualitative",mro:null,mroLoading:false,evidence:null,evidenceLoading:false,surface:null,surfaceLoading:false,ctxMeasured:null,ctxMeasuredLoading:false,processes:null,processLoading:false,angle:-.5,pitch:.18,zoom:1});
  $("location-search").value="";paint();
  try{const data=await request("/exploration/sites?body="+target);if(token!==state.token)return;state.sites=data.sites;paint();refreshLive();}
  catch(e){$("list-label").textContent="Unable to load sites: "+e.message;}
 }
 async function choose(item){
  if(state.view==="earth"){
-  state.selected=item;state.measurements=null;state.surface=null;state.evidence=null;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();loadEarthMeasurements(item);loadEarthSurface(item);if(state.surveyMode==="measured")loadAnalogEvidence(item);return;
+  state.selected=item;state.measurements=null;state.surface=null;state.processes=null;state.evidence=null;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();loadEarthMeasurements(item);loadEarthSurface(item);loadEarthProcesses(item);if(state.surveyMode==="measured")loadAnalogEvidence(item);return;
  }
  const token=++state.token;
  state.view="earth";state.reference=null;state.selected=null;state.selectedSite=item;
- state.screening=null;state.earth=[];state.evidence=null;state.surface=null;state.surfaceLoading=false;state.mro=null;state.ctxMeasured=null;state.ctxMeasuredLoading=state.target==="mars";state.mroLoading=state.target==="mars";
+ state.screening=null;state.earth=[];state.evidence=null;state.surface=null;state.surfaceLoading=false;state.processes=null;state.processLoading=false;state.mro=null;state.ctxMeasured=null;state.ctxMeasuredLoading=state.target==="mars";state.mroLoading=state.target==="mars";
  $("location-search").value="";paint();
  if(state.target==="mars"){loadMROContext(item);loadMeasuredCTX(item);}
  try{
@@ -259,7 +277,7 @@ async function choose(item){
    if(token!==state.token)return;
    state.surveyMode="qualitative";state.screening=data;state.reference=null;state.earth=data.results||[];
   }
-  if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);loadEarthSurface(state.earth[0]);if(state.surveyMode==="measured")loadAnalogEvidence(state.earth[0]);}
+  if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);loadEarthSurface(state.earth[0]);loadEarthProcesses(state.earth[0]);if(state.surveyMode==="measured")loadAnalogEvidence(state.earth[0]);}
   if(state.earth.length){state.angle=-rad(state.earth[0].longitude);state.pitch=rad(state.earth[0].latitude);}
   paint();
  }catch(e){$("list-label").textContent="Unable to load evidence screening: "+e.message;}
@@ -309,6 +327,21 @@ async function loadMROContext(site){
  }
  if(seq!==state.mroSeq)return;
  state.mroLoading=false;details();
+}
+
+async function loadEarthProcesses(item){
+ const seq=++state.processSeq;
+ state.processLoading=true;state.processes=null;details();
+ try{
+  const payload=await request("/science/earth-processes?latitude="+item.latitude+"&longitude="+item.longitude);
+  if(seq!==state.processSeq||state.selected?.id!==item.id)return;
+  state.processes=payload;
+ }catch(error){
+  if(seq!==state.processSeq||state.selected?.id!==item.id)return;
+  state.processes={error:error.message};
+ }
+ if(seq!==state.processSeq)return;
+ state.processLoading=false;details();
 }
 
 async function loadEarthSurface(item){
@@ -439,3 +472,32 @@ async function checkGlobalTerrainSurvey(){
  }catch(e){el.classList.add("error");el.textContent="Terrain survey status unavailable: "+e.message;}
 }
 checkGlobalTerrainSurvey();
+
+async function loadScientificCoverage(){
+ const parent=$("coverage-rows"),status=$("coverage-summary");
+ if(!parent||!status)return;
+ try{
+  const data=await request("/science/coverage");
+  status.textContent=data.measured_comparable_dimensions+" / "+data.total_planned_dimensions+
+   " scientific dimensions have paired evidence. "+data.additional_high_resolution_mars_dtm_scene_count+
+   " high-resolution Mars DTM scene(s) measured separately.";
+  parent.replaceChildren();
+  for(const row of data.dimensions){
+   const box=document.createElement("div");box.className="coverage-row";
+   const heading=document.createElement("b");heading.textContent=row.name;
+   const stateText=document.createElement("span");stateText.textContent=
+      row.paired_measurement_status==="preliminary_measured_two_metric_screening"?
+      "Measured screening · 2 topographic metrics":"No paired quantitative comparison";
+   stateText.className=row.paired_measurement_status==="preliminary_measured_two_metric_screening"?
+      "coverage-status measured":"coverage-status missing";
+   const why=document.createElement("p");why.textContent=row.next;
+   box.append(heading,stateText,why);
+   const link=(row.source_urls||[])[0];
+   if(link?.startsWith("https://")){
+    const a=document.createElement("a");a.href=link;a.target="_blank";a.rel="noopener noreferrer";a.textContent="Scientific source";box.append(a);
+   }
+   parent.append(box);
+  }
+ }catch(error){status.textContent="Scientific coverage unavailable: "+error.message;}
+}
+loadScientificCoverage();
