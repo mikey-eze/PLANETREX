@@ -1,0 +1,45 @@
+name: PLANETREX real browser visual regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/app/web/**'
+      - 'backend/browser_tests/**'
+      - '.github/workflows/browser.yml'
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install FastAPI and Chromium automation
+        run: |
+          python -m pip install -r backend/requirements.txt
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Start actual PLANETREX backend
+        run: |
+          (cd backend && APP_ENV=test uvicorn app.main:app --host 127.0.0.1 --port 10000 > /tmp/planetrex-test-server.log 2>&1 &)
+          python - <<'PY'
+          import time,urllib.request
+          for i in range(80):
+              try:
+                  x=urllib.request.urlopen("http://127.0.0.1:10000/health",timeout=2)
+                  assert x.status==200
+                  break
+              except Exception:
+                  time.sleep(.5)
+          else: raise RuntimeError("Backend failed to start")
+          PY
+      - name: Real mobile and desktop browser navigation and screenshot checks
+        run: python backend/browser_tests/smoke_browser.py
+      - name: Publish screenshots even on failure
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: planetrex-mobile-desktop-real-browser
+          path: artifacts/*.png
