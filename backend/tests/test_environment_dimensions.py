@@ -40,7 +40,8 @@ def test_modis_missing_qc_not_treated_as_valid_temperature():
 
 
 def test_power_process_units_and_sentinels():
-    data={"properties":{"parameter":{
+    data={"parameters":{"ALLSKY_SFC_SW_DWN":{"units":"MJ/m^2/day"}},
+          "properties":{"parameter":{
       "T2M":{"d1":14,"d2":16,"d3":-999},
       "PRECTOTCORR":{"d1":1.3,"d2":2.4},
       "WS10M":{"d1":4,"d2":5},
@@ -50,7 +51,7 @@ def test_power_process_units_and_sentinels():
     assert result["T2M"]["value"]==15.0
     assert result["PRECTOTCORR"]["value"]==3.7
     assert result["WS10M"]["value"]==4.5
-    assert result["ALLSKY_SFC_SW_DWN"]["value"]==6.0
+    assert result["ALLSKY_SFC_SW_DWN"]["value"]==1.667  # 6 MJ/m²/day -> kWh/m²/day
     assert result["T2M"]["sample_days"]==2
 
 def test_real_mro_rasters_are_independent_of_analog_score():
