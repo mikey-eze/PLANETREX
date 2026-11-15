@@ -1,0 +1,64 @@
+# Secret and machine-local settings
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Python and test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and editors
+.venv/
+venv/
+env/
+.vscode/
+.idea/
+
+# Scientific data products: retain folder placeholders only
+/data/raw/**
+!/data/raw/.gitkeep
+/data/processed/**
+!/data/processed/.gitkeep
+/data/results/**
+!/data/results/.gitkeep
+
+# Large scientific formats anywhere in the repository
+*.tif
+*.tiff
+*.nc
+*.nc4
+*.h5
+*.hdf
+*.hdf5
+*.grib
+*.grb
+*.zarr/
+*.parquet
+*.fits
+*.img
+*.jp2
+*.las
+*.laz
+*.gpkg
+*.sqlite
+*.sqlite3
+*.db
+
+# Platform clutter
+.DS_Store
+Thumbs.db
+
+# Vite / TypeScript frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+*.tsbuildinfo
