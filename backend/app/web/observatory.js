@@ -334,7 +334,7 @@ async function loadEightDomainComparison(earth){
   const scores=data.paired_domain_scores;
   const headline=document.createElement("p");
   headline.textContent="Terrain screening index: "+data.terrain_similarity_percent+
-    "% · Paired-domain coverage: "+(scores?.domain_coverage_percent??0)+"%";
+    "% · Paired-domain coverage: "+(scores?.domain_coverage_percent??data.coverage_percent)+"%";
   target.append(headline);
   const note=document.createElement("p");note.className="simple-note";
   note.textContent=scores?.overall_eight_domain_similarity_percent!=null?
