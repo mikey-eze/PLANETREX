@@ -69,6 +69,29 @@ def _first(value: Any) -> str | None:
     return None
 
 
+def _target_confirmed(props: dict[str, Any], target: str) -> bool:
+    """Require an explicit target field; never rely on query-string alone.
+
+    The PDS Search endpoint has returned unrelated Cassini/Hayabusa products in
+    practice even with target filters. A title or archive name is not proof.
+    """
+    target_lid = {
+        "moon": "urn:nasa:pds:context:target:satellite.earth.moon",
+        "mars": "urn:nasa:pds:context:target:planet.mars",
+    }[target]
+    for key, value in props.items():
+        if "target" not in str(key).lower():
+            continue
+        items = value if isinstance(value, list) else [value]
+        for element in items:
+            if not isinstance(element, str):
+                continue
+            normalized = element.strip().lower()
+            if normalized in {target, target_lid}:
+                return True
+    return False
+
+
 def fetch_planetary_products(client: httpx.Client, target: str, limit: int = 12) -> dict[str, Any]:
     """PDS product metadata, not location-specific measurements or scores."""
     # 'target_name' is a documented PDS search alias, with server-side filtering.
@@ -87,6 +110,8 @@ def fetch_planetary_products(client: httpx.Client, target: str, limit: int = 12)
         props = item.get("properties", {})
         if not isinstance(props, dict):
             props = {}
+        if not _target_confirmed(props, target):
+            continue
         title = _first(props.get("pds:Identification_Area.pds:title")) or _first(props.get("title")) or _first(item.get("title"))
         identifier = _first(props.get("lidvid")) or _first(props.get("pds:Identification_Area.pds:logical_identifier")) or _first(item.get("id"))
         if not identifier:
@@ -97,4 +122,5 @@ def fetch_planetary_products(client: httpx.Client, target: str, limit: int = 12)
     return {"source": "NASA Planetary Data System (PDS)", "source_url": PDS_URL,
             "retrieved_at": _timestamp(), "target": target, "kind": "planetary_archive_metadata",
             "analog_results": False, "products": products,
-            "warning": "PDS search indexes archive products; entries are not measured analog matches."}
+            "target_verification": "explicit_target_metadata_required",
+            "warning": "Only products with an explicit matching target metadata field are returned. Unverified archive hits are excluded; results are metadata, not measured analog matches."}
