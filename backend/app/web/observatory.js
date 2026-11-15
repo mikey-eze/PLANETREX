@@ -369,6 +369,55 @@ function renderTelemetry(){
  renderMatrix();
  renderEarthEvidence();
 }
+
+function fieldNumber(field,digits=1,suffix=""){
+ const v=field?.value;
+ return typeof v==="number"&&Number.isFinite(v)?v.toFixed(digits)+suffix:"Not measured";
+}
+function renderEarthEvidence(){
+ const evidence=state.earth?.earth_evidence||{};
+ const env=evidence.environment||{};
+ const rock=evidence.geology_units?.[0];
+ setText("deep-rain",fieldNumber(env.precipitation_annual_mm,0," mm"));
+ setText("deep-wind",fieldNumber(env.wind_10m_mean_ms,1," m/s"));
+ setText("deep-solar",fieldNumber(env.solar_shortwave_mean_kwh_m2_day,2," kWh/m²/day"));
+ setText("deep-rock",rock?(rock.lith||rock.name||"Mapped unit"):"No mapped unit");
+ const sources=evidence.source_count||0;
+ setText("earth-science-count",sources?sources+" SOURCES":"UNPROFILED");
+ setText("earth-evidence-note",sources?
+  "NASA 2025 annual climate and mapped Earth geology. These observations characterize the location, not an unverified planetary match.":
+  state.earth?"Checking actual source data for this terrestrial region; no numbers will be guessed.":"Select an Earth candidate.");
+ if(state.earth&&!sources)setText("deep-rock","Awaiting source");
+}
+async function loadEarthAnnualIfMissing(earth){
+ if(earth.earth_evidence?.source_count)return;
+ const token=++state.deepToken;
+ try{
+  const data=await json("/science/earth-environmental-profile?latitude="+earth.latitude+"&longitude="+earth.longitude);
+  if(token!==state.deepToken||state.earth!==earth)return;
+  earth.earth_evidence=data.source_evidence;
+  renderEarthEvidence();
+ }catch(error){
+  if(token!==state.deepToken||state.earth!==earth)return;
+  setText("earth-evidence-note","Annual NASA data unavailable: "+error.message+". The measured topography remains available.");
+ }
+}
+async function loadMODISEvidence(earth){
+ const token=++state.modisToken;
+ setText("deep-lst","Loading…");setText("deep-ndvi","Loading…");
+ setText("deep-modis-status","Checking NASA Terra MODIS satellite observations and quality flags…");
+ const params="?latitude="+earth.latitude+"&longitude="+earth.longitude;
+ const items=await Promise.allSettled([
+  json("/science/earth-surface"+params),
+  json("/science/earth-vegetation"+params)
+ ]);
+ if(token!==state.modisToken||state.earth!==earth)return;
+ const t=items[0].status==="fulfilled"?items[0].value.measurements?.surface_day:null;
+ const n=items[1].status==="fulfilled"?items[1].value.measurement:null;
+ setText("deep-lst",typeof t?.value==="number"?t.value.toFixed(1)+" °C":"No QC-passed sample");
+ setText("deep-ndvi",typeof n?.ndvi_mean==="number"?n.ndvi_mean.toFixed(3):"No QC-passed sample");
+ setText("deep-modis-status","NASA MODIS land temperature and vegetation index are Earth measurements, not evidence of lunar/Martian life.");
+}
 function renderCandidates(){
  const list=$("candidate-list"),query=$("candidate-search").value.trim().toLowerCase();
  list.replaceChildren();
