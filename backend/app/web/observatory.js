@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const rad=d=>d*Math.PI/180;
 const TAU=Math.PI*2;
-const state={body:"moon",mode:"dual",orbit:false,sites:[],reference:null,candidates:[],site:null,earth:null,evidence:null,filter:"all",requestToken:0,evidenceToken:0,angles:{target:-0.5,earth:-0.3},pitches:{target:0.18,earth:0.18},zooms:{target:1,earth:1}};
+const state={body:"moon",mode:"dual",orbit:false,sites:[],reference:null,candidates:[],site:null,earth:null,evidence:null,filter:"all",requestToken:0,evidenceToken:0,snapshotToken:0,angles:{target:-0.5,earth:-0.3},pitches:{target:0.18,earth:0.18},zooms:{target:1,earth:1}};
 const globes={target:{canvas:$("target-globe"),texture:"moon",markers:[],hits:[],drag:null},earth:{canvas:$("earth-globe"),texture:"earth",markers:[],hits:[],drag:null}};
 const textures={};
 const sources={moon:"https://www.solarsystemscope.com/textures/download/2k_moon.jpg",mars:"https://www.solarsystemscope.com/textures/download/2k_mars.jpg",earth:"https://www.solarsystemscope.com/textures/download/2k_earth_daymap.jpg"};
@@ -17,6 +17,18 @@ function str(v){return v==null?"—":String(v)}
 function deg(v){return Number(v).toFixed(3)+"°"}
 function coords(obj){return obj?deg(obj.latitude)+", "+deg(obj.longitude):"Coordinates unavailable"}
 function setText(id,text){const node=$(id);if(node)node.textContent=text}
+function openData(){
+ const panel=$("telemetry");panel.hidden=false;
+ $("show-data").setAttribute("aria-expanded","true");
+ $("show-data").textContent="◫ DATA OPEN";
+}
+function closeData(){
+ const panel=$("telemetry");panel.hidden=true;
+ $("show-data").setAttribute("aria-expanded","false");
+ $("show-data").textContent="◫ VIEW DATA";
+ $("show-data").focus();
+}
+
 function currentIndex(body){return state.sites.findIndex(s=>s.id===body)}
 function setMode(mode){
  state.mode=mode;
@@ -189,6 +201,7 @@ async function loadSites(body){
 async function chooseSite(site){
  state.site=site;state.earth=null;state.reference=null;state.candidates=[];state.evidence=null;
  const token=++state.requestToken;
+ openData();
  setText("target-selection",site.name);
  setText("target-coordinates",coords(site)+(site.mission?" · "+site.mission:""));
  setText("earth-selection","Searching measured terrain…");
@@ -217,10 +230,11 @@ async function chooseSite(site){
 }
 async function chooseEarth(earth){
  state.earth=earth;state.evidence=null;
+ openData();
  setText("earth-selection",earth.name);
  setText("earth-coordinates",coords(earth)+" · "+(earth.search_stage==="coarse_to_fine_refinement"?"Refined Earth sample":"Global Earth sample"));
  centerGlobe("earth",earth);renderCandidates();renderTelemetry();
- $("query-elevation").disabled=false;
+ loadEarthSnapshot(earth);
  const token=++state.evidenceToken;
  try{
   const data=await json("/science/analog-evidence?body="+state.body+
@@ -254,14 +268,16 @@ function renderMatrix(){
 }
 function renderTelemetry(){
  const a=state.reference?.stats,b=state.earth?.stats;
+ setText("popup-target",state.site?.name||"PLANETARY SITE");
+ setText("popup-earth",state.earth?.name||"EARTH CANDIDATE");
+ setText("distance-score",state.earth?Number(state.earth.terrain_distance).toFixed(3):"—");
  setText("target-relief",a?Number(a.relief_m).toLocaleString():"—");
  setText("earth-relief",b?Number(b.relief_m).toLocaleString():"—");
  setText("target-roughness",a?Number(a.height_std_m).toLocaleString():"—");
  setText("earth-roughness",b?Number(b.height_std_m).toLocaleString():"—");
  setText("distance-status",state.earth&&state.reference?
-  "Measured terrain distance: "+Number(state.earth.terrain_distance).toFixed(4)+
-  " (dimensionless; lower is closer). 2 DEM features / 1 of 8 challenge dimensions.":
-  "Choose a measured reference site. No physical similarity percentage is claimed.");
+  "Terrain only · 2 measured features. Lower distance means closer terrain variation, NOT a similarity %.":
+  "Select a site to compare measured terrain.");
  $("query-elevation").disabled=!state.earth;
  $("planet-data-link").href=state.reference?.source_url||"https://pds.nasa.gov/";
  $("earth-data-link").href=state.earth?.source_url||"https://www.opentopodata.org/datasets/aster/";
@@ -296,19 +312,34 @@ function renderCandidates(){
   button.append(rank,inf,score);button.onclick=()=>chooseEarth(item);list.append(button);
  });
 }
-async function queryElevation(){
- if(!state.earth)return;
- const button=$("query-elevation");button.disabled=true;
- setText("elevation-result","Querying point elevation from Copernicus DEM / Open-Meteo; ASTER backup may be used if unavailable…");
+async function loadEarthSnapshot(earth){
+ const token=++state.snapshotToken;
+ const button=$("query-elevation");
+ button.disabled=true;
+ setText("earth-temp","…");
+ setText("earth-point-elevation","…");
+ setText("elevation-result","Loading NASA POWER air temperature and Earth DEM point elevation…");
  try{
-  const data=await json("/science/earth-environment?latitude="+state.earth.latitude+"&longitude="+state.earth.longitude);
-  const m=data.measurements?.DEM_ELEVATION;
-  setText("elevation-result",m&&Number.isFinite(m.value)?
-    Number(m.value).toLocaleString()+" "+m.unit+" elevation · "+m.source+
-    ". Point elevation is not directly comparable with planetary reference height.":
-    "No valid DEM point elevation available. Source errors: "+(data.source_errors||[]).map(x=>x.source).join(", "));
- }catch(e){setText("elevation-result","Elevation API unavailable: "+e.message+". No placeholder measurement shown.");}
- button.disabled=!state.earth;
+  const data=await json("/science/earth-environment?latitude="+earth.latitude+
+    "&longitude="+earth.longitude);
+  if(token!==state.snapshotToken||state.earth!==earth)return;
+  const temp=data.measurements?.T2M?.value, elevation=data.measurements?.DEM_ELEVATION;
+  setText("earth-temp",Number.isFinite(temp)?Number(temp).toFixed(1)+" °C":"N/A");
+  setText("earth-point-elevation",Number.isFinite(elevation?.value)?
+    Math.round(elevation.value).toLocaleString()+" m":"N/A");
+  setText("elevation-result","Earth temperature: NASA POWER, January 2025 (2m air). Elevation: "+
+   (elevation?.source||"unavailable")+". Neither is a measured Moon/Mars temperature match.");
+ }catch(error){
+  if(token!==state.snapshotToken||state.earth!==earth)return;
+  setText("earth-temp","N/A");
+  setText("earth-point-elevation","N/A");
+  setText("elevation-result","Earth data unavailable ("+error.message+"). No estimated values shown.");
+ }finally{
+  if(token===state.snapshotToken)button.disabled=!state.earth;
+ }
+}
+async function queryElevation(){
+ if(state.earth)await loadEarthSnapshot(state.earth);
 }
 async function checkConnection(){
  try{
@@ -326,10 +357,10 @@ $("orbit-switch").addEventListener("click",()=>{
  state.orbit=!state.orbit;
  const b=$("orbit-switch");b.setAttribute("aria-pressed",String(state.orbit));b.textContent="● ORBIT: "+(state.orbit?"ON":"OFF");
 });
-$("drawer-toggle").addEventListener("click",()=>{
- const card=$("telemetry");const collapsed=card.classList.toggle("collapsed");
- $("drawer-toggle").textContent=collapsed?"+ EXPAND DETAILS":"− HIDE DETAILS";
- $("drawer-toggle").setAttribute("aria-expanded",String(!collapsed));
+$("drawer-toggle").addEventListener("click",closeData);
+$("show-data").addEventListener("click",openData);
+document.addEventListener("keydown",event=>{
+ if(event.key==="Escape"&&!$("telemetry").hidden)closeData();
 });
 $("query-elevation").addEventListener("click",queryElevation);
 $("candidate-search").addEventListener("input",renderCandidates);
