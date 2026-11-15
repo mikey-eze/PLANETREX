@@ -39,3 +39,16 @@ def test_all_domains_and_features_can_produce_full_index():
     assert result["domain_coverage_percent"]==100
     assert result["overall_eight_domain_similarity_percent"]==100
     assert result["fully_covered"]
+
+def test_csv_import_rejects_invented_or_incompatible_measurements():
+    from app.pipeline.import_paired_observations import ingest
+    valid={"body":"mars","site_id":"perseverance","earth_id":"region_1",
+           "side":"earth","domain":"topography","feature":"relief_m",
+           "value":"200","unit":"m","measurement_kind":"regional_dem_relief",
+           "spatial_support_km":"24","sampling_context":"annual_mean",
+           "source_url":"https://earthdata.nasa.gov/"}
+    bad={**valid,"source_url":""}
+    result=ingest([valid,bad])
+    assert result["import_report"]["accepted"]==1
+    assert len(result["import_report"]["rejected"])==1
+    assert result["earth"]["region_1"]["topography"]["relief_m"]["value"]==200
