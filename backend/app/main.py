@@ -20,6 +20,8 @@ from app.api.routes.sites import router as sites_router
 from app.api.routes.analog_screening import router as analog_screening_router
 from app.api.routes.earth_measurements import router as earth_measurements_router
 from app.api.routes.earth_geology import router as earth_geology_router
+from app.api.routes.earth_vegetation import router as earth_vegetation_router
+from app.api.routes.earth_discovery import router as earth_discovery_router
 from app.api.routes.terrain_survey import router as terrain_survey_router
 from app.api.routes.mro_context import router as mro_context_router
 from app.api.routes.analog_evidence import router as analog_evidence_router
@@ -52,6 +54,8 @@ def create_app() -> FastAPI:
     application.include_router(analog_screening_router)
     application.include_router(earth_measurements_router)
     application.include_router(earth_geology_router)
+    application.include_router(earth_vegetation_router)
+    application.include_router(earth_discovery_router)
     application.include_router(terrain_survey_router)
     application.include_router(mro_context_router)
     application.include_router(analog_evidence_router)
@@ -123,6 +127,8 @@ def create_app() -> FastAPI:
                 "/scientific/nasa-imagery?target=mars&limit=5",
                 "/science/earth-environment?latitude=19.4069&longitude=-155.2834",
                 "/science/earth-geology?latitude=19.4069&longitude=-155.2834",
+                "/science/earth-discovery?body=moon&site_id=apollo-15&limit=5",
+                "/science/earth-discovery?body=mars&site_id=perseverance&environment=dry&limit=5",
                 "/science/earthdata-catalog?keyword=elevation&limit=3",
                 "/science/coverage",
                 "/science/mro-ctx-measured?site_id=perseverance",
