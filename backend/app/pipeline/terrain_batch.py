@@ -186,7 +186,8 @@ def distance(ref: dict, candidate: dict) -> dict:
         "distance_terms": {"log1p_relief_absolute_difference": round(relief,4),
                            "log1p_std_absolute_difference": round(roughness,4)},
         "measured_terrain_features": 2, "requested_features": 8,
-        "dimension_coverage_fraction": 0.25,
+        "measured_dimensions": 1, "planned_dimensions": 8,
+        "dimension_coverage_fraction": 0.125,
         "scientific_similarity_percent": None,
         "physical_match_is_validated": False,
     }
