@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-15T10:29:29.101212+00:00",
+  "generated_at": "2026-11-15T10:31:42.053118+00:00",
   "kind": "Earth-only multi-source environment evidence for potential Moon/Mars analog discovery",
   "selection_method": "Union of top 10 terrain candidates for each planetary reference, plus geographically dispersed surveyed Earth regions",
   "data_sources": {
@@ -91,7 +91,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 13.986,
+            "value": 3.885,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -216,7 +216,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 24.22,
+            "value": 6.728,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -344,7 +344,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 17.458,
+            "value": 4.849,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -469,7 +469,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 13.089,
+            "value": 3.636,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -578,7 +578,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 13.677,
+            "value": 3.799,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -721,7 +721,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.726,
+            "value": 3.535,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -908,7 +908,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 9.045,
+            "value": 2.512,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -1053,7 +1053,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 9.473,
+            "value": 2.631,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -1179,7 +1179,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 9.059,
+            "value": 2.516,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -1287,7 +1287,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 10.259,
+            "value": 2.85,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -1416,7 +1416,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 10.425,
+            "value": 2.896,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -1540,7 +1540,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 7.364,
+            "value": 2.046,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -1664,7 +1664,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 8.485,
+            "value": 2.357,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -1790,7 +1790,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 6.757,
+            "value": 1.877,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -1917,7 +1917,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 11.451,
+            "value": 3.181,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -2046,7 +2046,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 8.667,
+            "value": 2.407,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -2191,7 +2191,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 7.828,
+            "value": 2.174,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -2334,7 +2334,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 19.496,
+            "value": 5.416,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -2459,7 +2459,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 19.704,
+            "value": 5.473,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -2584,7 +2584,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 20.41,
+            "value": 5.669,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -2724,7 +2724,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 16.546,
+            "value": 4.596,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -2847,7 +2847,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 15.982,
+            "value": 4.439,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -2985,7 +2985,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 19.779,
+            "value": 5.494,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -3131,7 +3131,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 23.333,
+            "value": 6.481,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -3256,7 +3256,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.299,
+            "value": 3.416,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -3360,7 +3360,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.515,
+            "value": 3.476,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -3465,7 +3465,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 13.038,
+            "value": 3.622,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -3569,7 +3569,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.903,
+            "value": 3.584,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -3674,7 +3674,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.62,
+            "value": 3.506,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -3778,7 +3778,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 11.387,
+            "value": 3.163,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -3881,7 +3881,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 11.354,
+            "value": 3.154,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -3984,7 +3984,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 10.073,
+            "value": 2.798,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -4088,7 +4088,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 19.467,
+            "value": 5.407,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -4212,7 +4212,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 17.458,
+            "value": 4.849,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -4336,7 +4336,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 17.427,
+            "value": 4.841,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -4461,7 +4461,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 17.458,
+            "value": 4.849,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -4586,7 +4586,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.748,
+            "value": 3.541,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -4694,7 +4694,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 13.089,
+            "value": 3.636,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -4803,7 +4803,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 13.677,
+            "value": 3.799,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -4946,7 +4946,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 13.736,
+            "value": 3.816,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -5089,7 +5089,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 9.963,
+            "value": 2.767,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -5179,7 +5179,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 10.325,
+            "value": 2.868,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -5305,7 +5305,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 11.656,
+            "value": 3.238,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -5434,7 +5434,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 11.451,
+            "value": 3.181,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -5563,7 +5563,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 16.546,
+            "value": 4.596,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -5687,7 +5687,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 16.546,
+            "value": 4.596,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -5810,7 +5810,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 21.911,
+            "value": 6.086,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -5921,7 +5921,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 19.779,
+            "value": 5.494,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -6067,7 +6067,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 23.333,
+            "value": 6.481,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -6192,7 +6192,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 19.779,
+            "value": 5.494,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -6336,7 +6336,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 23.333,
+            "value": 6.481,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -6461,7 +6461,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 23.934,
+            "value": 6.648,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -6586,7 +6586,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 19.304,
+            "value": 5.362,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -6730,7 +6730,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 22.427,
+            "value": 6.23,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -6855,7 +6855,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 22.7,
+            "value": 6.306,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -6980,7 +6980,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.903,
+            "value": 3.584,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -7085,7 +7085,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.903,
+            "value": 3.584,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -7190,7 +7190,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.903,
+            "value": 3.584,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -7295,7 +7295,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.515,
+            "value": 3.476,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -7400,7 +7400,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.515,
+            "value": 3.476,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -7505,7 +7505,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.515,
+            "value": 3.476,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -7609,7 +7609,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.515,
+            "value": 3.476,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -7714,7 +7714,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.815,
+            "value": 3.56,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -7818,7 +7818,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.406,
+            "value": 3.446,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
@@ -7923,7 +7923,7 @@
             "aggregation": "mean"
           },
           "solar_shortwave_mean_kwh_m2_day": {
-            "value": 12.406,
+            "value": 3.446,
             "unit": "kWh/m²/day",
             "sample_days": 365,
             "status": "source_derived",
