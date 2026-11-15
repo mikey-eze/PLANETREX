@@ -9,6 +9,7 @@ import math
 from fastapi import APIRouter, HTTPException, Query
 
 from app.api.routes.terrain_survey import read_dataset
+from app.api.routes.earth_discovery import rank_global, summarize_earth_profile, field_lookup
 
 router=APIRouter(prefix="/science",tags=["Explainable planetary analog evidence"])
 
@@ -87,10 +88,14 @@ def analog_evidence(body:Literal["moon","mars"],site_id:str,earth_id:str)->dict:
               r["body"]==body and r["id"]==site_id),None)
     if ref is None:
         raise HTTPException(404,detail="No measurement-backed planetary reference")
-    candidate=next((r for r in data["screenings"].get(key,[])
-                    if r["id"]==earth_id),None)
+    shortlist=data["screenings"].get(key,[])
+    candidate=next((r for r in shortlist if r["id"]==earth_id),None)
     if candidate is None:
-        raise HTTPException(404,detail="Earth region is not in this site's screened shortlist")
+        _,regional=rank_global(data,body,site_id)
+        candidate=next((r for r in regional if r["id"]==earth_id),None)
+        if candidate is not None:shortlist=list(shortlist)+[candidate]
+    if candidate is None:
+        raise HTTPException(404,detail="Earth region was not measured in the global terrain survey")
     p=ref["stats"];e=candidate["stats"]
     pair={
       "dimension":"topography",
@@ -144,7 +149,8 @@ def analog_evidence(body:Literal["moon","mars"],site_id:str,earth_id:str)->dict:
       "source_batch_date":data["built_at"],
       "global_grid":data["global_scan"],
       "refinement":data.get("refinement"),
-      "terrain_rank_sensitivity":terrain_sensitivity(ref,data["screenings"].get(key,[]),earth_id),
+      "terrain_rank_sensitivity":terrain_sensitivity(ref,shortlist,earth_id),
+      "earth_multisource_evidence":summarize_earth_profile(field_lookup().get(earth_id)),
       "scientific_similarity_percent":None,
       "scientific_status":"preliminary_measurement_based_terrain_screening",
       "important":"The method compares only 2 regional DEM descriptors, not lunar/Martian climate, mineralogy or base suitability. Local ground truth and uncertainties are essential."
