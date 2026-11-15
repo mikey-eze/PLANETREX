@@ -1,6 +1,10 @@
 """ASGI application entry point: uvicorn app.main:app."""
 
 from pathlib import Path
+import asyncio
+import logging
+import os
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -41,6 +45,33 @@ def create_app() -> FastAPI:
     def explorer() -> FileResponse:
         """Dependency-free browser fallback, served by FastAPI."""
         return FileResponse(explorer_dir / "index.html")
+
+    @application.on_event("startup")
+    async def production_probe_startup() -> None:
+        """Probe real endpoints once per deploy; log failures rather than fake success."""
+        async def check() -> None:
+            await asyncio.sleep(3)
+            port = os.environ.get("PORT", "10000")
+            paths = [
+                "/health", "/explorer", "/explorer-assets/explorer.js",
+                "/exploration/sites?body=moon", "/science/profiles?body=earth",
+                "/scientific/earth-events?limit=5",
+                "/scientific/planetary-products?target=moon&limit=5",
+                "/scientific/planetary-products?target=mars&limit=5",
+            ]
+            logger = logging.getLogger("planetrex.deploy_probe")
+            async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=23.0) as client:
+                for path in paths:
+                    try:
+                        response = await client.get(path)
+                        logger.warning("PROBE %s HTTP %d bytes=%d sample=%s",
+                                       path, response.status_code, len(response.content),
+                                       response.text[:110].replace(chr(10), " "))
+                    except Exception as exc:
+                        logger.error("PROBE %s FAILED %s %s", path, type(exc).__name__, exc)
+        if os.getenv("APP_ENV") == "production":
+            asyncio.create_task(check())
+
     return application
 
 
