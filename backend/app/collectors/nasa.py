@@ -72,7 +72,7 @@ def _first(value: Any) -> str | None:
 def fetch_planetary_products(client: httpx.Client, target: str, limit: int = 12) -> dict[str, Any]:
     """PDS product metadata, not location-specific measurements or scores."""
     # 'target_name' is a documented PDS search alias, with server-side filtering.
-    payload = _get_json(client, PDS_URL, {"q": f'target_name eq "{target.capitalize()}"', "limit": limit})
+    payload = _get_json(client, PDS_URL, {"q": f'(target_name eq "{target.capitalize()}")', "limit": limit})
     raw_items = payload.get("data", [])
     if not isinstance(raw_items, list):
         raise NASAUpstreamError("NASA PDS response does not contain a product list")
