@@ -225,14 +225,16 @@ async function refreshLive(){
  putText("live-state","Contacting NASA...");
  putText("earth-source-status","Requesting current NASA EONET events...");
  putText("pds-source-status","Requesting "+state.target.toUpperCase()+" NASA imagery archive...");
+ putText("cmr-source-status","Searching NASA Earthdata terrain collections...");
  $("pds-title").textContent=(state.target==="moon"?"Moon":"Mars")+" · NASA Image Library";
- $("earth-events").replaceChildren();$("pds-products").replaceChildren();
+ $("earth-events").replaceChildren();$("pds-products").replaceChildren();$("cmr-products").replaceChildren();
  const outcomes=await Promise.allSettled([
   request("/scientific/earth-events?limit=30"),
-  request("/scientific/nasa-imagery?target="+state.target+"&limit=12")
+  request("/scientific/nasa-imagery?target="+state.target+"&limit=12"),
+  request("/science/earthdata-catalog?keyword=elevation&limit=6")
  ]);
  if(seq!==liveRequestCounter)return;
- const [earth,pds]=outcomes;
+ const [earth,pds,cmr]=outcomes;
  let successes=0;
  if(earth.status==="fulfilled"){
   successes++;
@@ -258,7 +260,19 @@ async function refreshLive(){
   putText("pds-source-status","NASA imagery unavailable: "+pds.reason.message,true);
   addResult($("pds-products"),"NASA imagery request failed","No fabricated planetary measurements; source remains available via the link below.");
  }
- putText("live-state",successes+"/2 live NASA sources responding");
+ if(cmr.status==="fulfilled"){
+  successes++;
+  const payload=cmr.value,records=payload.collections||[];
+  putText("cmr-source-status",records.length+" catalog records · retrieved "+new Date(payload.retrieved_at).toLocaleString());
+  if(!records.length)addResult($("cmr-products"),"No catalog results","NASA Earthdata returned an empty search.");
+  for(const entry of records)addResult($("cmr-products"),entry.title||entry.id,
+     (entry.short_name||"")+(entry.version?" · v"+entry.version:""),
+     "NASA Earthdata catalog",entry.catalog_url);
+ }else{
+  putText("cmr-source-status","NASA Earthdata unavailable: "+cmr.reason.message,true);
+  addResult($("cmr-products"),"Catalog request failed","No replacement observations were fabricated.");
+ }
+ putText("live-state",successes+"/3 NASA data services responding");
  button.disabled=false;
 }
 $("refresh-live").addEventListener("click",refreshLive);
