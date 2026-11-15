@@ -18,6 +18,7 @@ from app.api.routes.profiles import router as profiles_router
 from app.api.routes.sites import router as sites_router
 from app.api.routes.analog_screening import router as analog_screening_router
 from app.api.routes.earth_measurements import router as earth_measurements_router
+from app.api.routes.terrain_survey import router as terrain_survey_router
 
 
 def create_app() -> FastAPI:
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
     application.include_router(sites_router)
     application.include_router(analog_screening_router)
     application.include_router(earth_measurements_router)
+    application.include_router(terrain_survey_router)
     explorer_dir = Path(__file__).resolve().parent / "web"
     application.mount("/explorer-assets", StaticFiles(directory=explorer_dir), name="explorer-assets")
 
@@ -70,6 +72,9 @@ def create_app() -> FastAPI:
                 "/scientific/nasa-imagery?target=mars&limit=5",
                 "/science/earth-environment?latitude=19.4069&longitude=-155.2834",
                 "/science/earthdata-catalog?keyword=elevation&limit=3",
+                "/science/terrain-survey/status",
+                "/science/terrain-survey/candidates?body=moon&site_id=apollo-15",
+                "/science/terrain-survey/candidates?body=mars&site_id=perseverance",
                 "/scientific/earth-events?limit=5",
                 "/scientific/planetary-products?target=moon&limit=5",
                 "/scientific/planetary-products?target=mars&limit=5",
