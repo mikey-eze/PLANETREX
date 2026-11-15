@@ -431,7 +431,12 @@ function renderCandidates(){
  const rows=state.candidates.filter(c=>
   (domain!=="isru"||Boolean(c.earth_evidence?.geology_units?.length))&&
   (c.name.toLowerCase().includes(query)||coords(c).toLowerCase().includes(query)));
- setText("candidate-count",rows.length+" TERRAIN CANDIDATES");
+ if(domain==="isru"){
+  const info=document.createElement("p");info.className="muted";
+  info.textContent="Earth rock-map evidence for resource-research leads only. No measured resource abundance or extraction readiness.";
+  list.append(info);
+ }
+  setText("candidate-count",rows.length+" TERRAIN CANDIDATES");
  if(!rows.length){const p=document.createElement("p");p.className="muted";p.textContent="No measured candidates match this search.";list.append(p);return}
  rows.forEach((item,i)=>{
   const button=document.createElement("button");button.type="button";button.className="candidate";
