@@ -57,8 +57,40 @@
    <button id="query-elevation" class="subtle-button" type="button" disabled>↻ REFRESH EARTH DATA</button>
    <div class="query-result" id="elevation-result">Earth temperature and point elevation load when a candidate is selected.</div>
   </section>
+  <section class="instrument deep-science" aria-label="Source-backed Earth geology and environmental measurements">
+   <div class="instrument-title"><h3>Earth scientific evidence</h3><span id="earth-science-count" class="candidate-total">SOURCE CHECK</span></div>
+   <p class="simple-note">Actual 2025 Earth observations at the selected coordinates · separate from the Moon/Mars terrain score.</p>
+   <div class="earth-evidence-grid">
+    <div><span>Annual rainfall</span><strong id="deep-rain">—</strong></div>
+    <div><span>Mean wind at 10 m</span><strong id="deep-wind">—</strong></div>
+    <div><span>Mean sunlight</span><strong id="deep-solar">—</strong></div>
+    <div><span>Mapped rock unit</span><strong id="deep-rock">—</strong></div>
+   </div>
+   <p class="simple-note" id="earth-evidence-note">Select an Earth candidate to view source-backed environmental data.</p>
+   <details class="detail-fold deep-more"><summary>Surface temperature & vegetation (NASA MODIS)</summary>
+    <div class="modis-row"><span>Daytime land-surface temperature</span><strong id="deep-lst">—</strong></div>
+    <div class="modis-row"><span>Vegetation index (NDVI)</span><strong id="deep-ndvi">—</strong></div>
+    <p id="deep-modis-status" class="simple-note">Satellite values are loaded only when you open this section.</p>
+   </details>
+   <div class="source-links">
+    <a href="https://power.larc.nasa.gov/docs/services/api/temporal/daily/" target="_blank" rel="noopener noreferrer">NASA POWER</a>
+    <a href="https://dev.macrostrat.org/docs/data-services" target="_blank" rel="noopener noreferrer">Geologic maps</a>
+    <a href="https://modis.ornl.gov/data/modis_webservice.html" target="_blank" rel="noopener noreferrer">NASA MODIS</a>
+   </div>
+  </section>
   <section class="instrument candidate-instrument" aria-label="Earth analog candidates">
    <div class="instrument-title"><h3>Earth candidates</h3><span id="candidate-count" class="candidate-total">0 CANDIDATES</span></div>
+   <label class="search-label" for="earth-condition-filter">FIND EARTH PLACES BY MEASURED ENVIRONMENT</label>
+   <select id="earth-condition-filter" aria-label="Earth science discovery filter">
+    <option value="all">All terrain candidates</option>
+    <option value="dry">Dry · below 250 mm annual rainfall</option>
+    <option value="cold">Cold · mean temperature below 0 °C</option>
+    <option value="windy">Windy · above 6 m/s</option>
+    <option value="sunny">Sunny · above 5 kWh/m²/day</option>
+    <option value="geology">Mapped geology available</option>
+    <option value="rugged">Rugged · relief above 1,000 m</option>
+   </select>
+   <p id="earth-discovery-status" class="simple-note">Discover measured terrain sites worldwide, then refine by real Earth observations.</p>
    <label class="search-label" for="candidate-search">SEARCH</label>
    <input id="candidate-search" type="search" placeholder="Region or coordinates">
    <div class="filter-row" id="domain-filters">
