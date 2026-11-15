@@ -1,0 +1,54 @@
+name: PLANETREX MRO CTX measured DTM validation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/app/pipeline/mro_dtm_chip.py'
+      - '.github/workflows/mro-dtm.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  mars-ctx:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install real raster processing dependencies
+        run: python -m pip install httpx numpy rasterio
+      - name: Fetch STAC scenes and measure quality-masked CTX elevation pixels
+        run: cd backend && python -m app.pipeline.mro_dtm_chip --output ../data/mro_dtm_overviews.json
+      - name: Validate source and measurement honesty
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('data/mro_dtm_overviews.json'))
+          assert d['schema_version']==1
+          assert d['collection']=='mro_ctx_controlled_usgs_dtms'
+          assert d['used_in_analog_scoring'] is False
+          for s in d['sites']:
+            for r in s['dtms']:
+              assert r['measurement']['valid_sample_count'] >= 100
+              assert r['measurement']['robust_relief_p95_p05_m'] >= 0
+              assert r['asset_url'].startswith('https://')
+          print('Real sampled MRO CTX DTM scenes:',d['measured_dtm_count'])
+          print('Status:',d['status'])
+          PY
+      - name: Commit proof or transparent source failures
+        run: |
+          git config user.name "planetrex-science-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/mro_dtm_overviews.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: persist measured CTX raster quality audit [skip ci]"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: planetrex-mro-ctx-actual-raster-audit
+          path: data/mro_dtm_overviews.json
