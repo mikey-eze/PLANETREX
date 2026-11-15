@@ -382,7 +382,15 @@ function renderEarthEvidence(){
  setText("deep-wind",fieldNumber(env.wind_10m_mean_ms,1," m/s"));
  setText("deep-solar",fieldNumber(env.solar_shortwave_mean_kwh_m2_day,2," kWh/m²/day"));
  setText("deep-rock",rock?(rock.lith||rock.name||"Mapped unit"):"No mapped unit");
- const sources=evidence.source_count||0;
+ const alignment=state.earth?.planetary_geology_evidence;
+ const match=alignment?.categorical_correspondence;
+ setText("deep-rock-correspondence",match===true?"Mapped lithology aligns":match===false?
+   "Different mapped rock category":"Not enough geology data");
+ const link=$("deep-rock-source");
+ const sourceUrl=alignment?.planetary_reference?.source_url;
+ link.hidden=!sourceUrl;
+ if(sourceUrl)link.href=sourceUrl;
+  const sources=evidence.source_count||0;
  setText("earth-science-count",sources?sources+" SOURCES":"UNPROFILED");
  setText("earth-evidence-note",sources?
   "NASA 2025 annual climate and mapped Earth geology. These observations characterize the location, not an unverified planetary match.":
