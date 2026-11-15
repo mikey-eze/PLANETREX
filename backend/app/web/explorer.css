@@ -31,3 +31,21 @@ body{height:auto;min-height:100vh;overflow-y:auto}
 .source-credit{font-size:11px;color:#94a6bb;line-height:1.6;margin-top:20px}
 #globe{max-height:100%}
 @media(max-width:800px){.viewer{min-height:0}.stage{height:58vh;min-height:300px}.sidebar{min-height:0;height:auto}.locations{max-height:370px}.live-grid{grid-template-columns:1fr}.live-actions{align-items:start}}
+
+/* Geometry fix: canvas is a square flex item, centered in the visible viewport.
+   Never let intrinsic canvas dimensions determine its layout position. */
+.stage{display:flex!important;align-items:center!important;justify-content:center!important;isolation:isolate;
+  height:clamp(420px,64vh,700px);min-height:420px;overflow:hidden}
+#globe{display:block!important;position:relative!important;flex:0 0 auto!important;
+  box-sizing:border-box;aspect-ratio:1/1!important;
+  width:min(76%,calc(64vh - 76px),600px)!important;
+  height:auto!important;max-width:calc(100% - 32px)!important;
+  max-height:calc(100% - 64px)!important;
+  object-fit:contain!important;align-self:center!important;justify-self:center!important;
+  margin:0!important;transform:none!important}
+.stage-tag,.instructions,.reset{z-index:2}
+.stage:after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  box-shadow:inset 0 0 45px #08152355;z-index:1}
+@media(max-width:800px){.stage{height:clamp(370px,58vh,540px);min-height:370px}
+ #globe{width:min(92%,calc(58vh - 80px),440px)!important;max-height:calc(100% - 60px)!important}
+ .instructions{max-width:65%;line-height:1.5}}
