@@ -66,4 +66,5 @@ def site_comparison(body:Literal["moon","mars"],site_id:str,earth_id:str):
             "coverage_percent":row["domain_coverage_percent"],
             "overall_eight_domain_similarity_percent":None,
             "domain_results":row["domains"],
+            "paired_domain_scores":row.get("paired_domain_scores"),
             "score_disclaimer":"Terrain percentage is a descriptive transform of two DEM metrics, not a calibrated scientific match. Other domains are not yet paired."}
