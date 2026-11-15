@@ -1,7 +1,7 @@
 "use strict";
 // Moon-first interactive research viewer. Navigation sites are not similarity claims.
 const $=id=>document.getElementById(id);
-const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null};
+const state={target:"moon",view:"planet",sites:[],earth:[],reference:null,selected:null,angle:-.5,pitch:.18,zoom:1,drag:null,busy:false,token:0,screening:null,selectedSite:null,measurements:null,measureLoading:false,measureSeq:0};
 const canvas=$("globe"),ctx=canvas.getContext("2d");
 const TAU=Math.PI*2;
 const rad=v=>v*Math.PI/180;
@@ -120,12 +120,30 @@ function renderList(){
 function details(){
  const d=$("details");d.replaceChildren();const title=document.createElement("b");title.textContent=state.view==="planet"?"Select a region":"Selected planetary reference";d.append(title);
  const p=document.createElement("p");
- p.textContent=state.view==="planet"?"Navigation markers show documented site locations, not scientific matches.":state.reference?"Measured reference: "+state.reference.name:"No measured Moon/Mars reference profile is available for this location. Similarity percentages are unavailable.";
+ p.textContent=state.view==="planet"?"Navigation markers show documented site locations, not scientific matches.":state.reference?"Measured reference: "+state.reference.name:"Descriptive geological feature screening only; quantitative planetary reference measurements are not yet integrated.";
  d.append(p);
  if(state.view==="earth" && state.screening){
   const summary=document.createElement("p");summary.textContent=state.screening.percent_meaning||"";d.append(summary);
   if(state.selectedSite){
    const location=document.createElement("p");location.textContent="Planetary location: "+state.selectedSite.name;d.append(location);
+  }
+ }
+ if(state.view==="earth"){
+  const heading=document.createElement("b");heading.textContent="Measured Earth observations";d.append(heading);
+  if(!state.selected){const help=document.createElement("p");help.textContent="Select an Earth candidate to load NASA POWER and Copernicus DEM observations.";d.append(help);}
+  else if(state.measureLoading){const help=document.createElement("p");help.textContent="Retrieving independently sourced Earth measurements…";d.append(help);}
+  else if(state.measurements){
+   const info=state.measurements;
+   const heading2=document.createElement("p");heading2.textContent="Measurement status: "+info.status+" · "+info.source_count+"/2 sources responding";d.append(heading2);
+   for(const [code,measurement] of Object.entries(info.measurements||{})){
+    const line=document.createElement("p");
+    line.textContent=measurement.label+": "+(measurement.value==null?"Unavailable":measurement.value+" "+measurement.unit);
+    d.append(line);
+    const note=document.createElement("small");note.textContent=measurement.source+" · "+(measurement.period||measurement.source_data||"point sample");d.append(note);
+    const link=document.createElement("a");link.href=measurement.source_url;link.rel="noopener noreferrer";link.target="_blank";link.textContent=" Dataset source";d.append(document.createTextNode(" "),link);
+   }
+   for(const err of info.source_errors||[]){const message=document.createElement("p");message.textContent="Source unavailable: "+err.source+" ("+err.reason+")";d.append(message);}
+   const warning=document.createElement("p");warning.textContent="These are real Earth measurements. A physically measured Moon/Mars comparison is not yet available.";d.append(warning);
   }
  }
  if(state.selected && typeof state.selected.tag_overlap_percent==="number"){
@@ -141,14 +159,14 @@ function details(){
 }
 function paint(){updateHeader();renderList();details();render();}
 async function loadPlanet(target){
- const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,angle:-.5,pitch:.18,zoom:1});
+ const token=++state.token;Object.assign(state,{target,view:"planet",sites:[],earth:[],reference:null,selected:null,selectedSite:null,screening:null,measurements:null,measureLoading:false,angle:-.5,pitch:.18,zoom:1});
  $("location-search").value="";paint();
  try{const data=await request("/exploration/sites?body="+target);if(token!==state.token)return;state.sites=data.sites;paint();refreshLive();}
  catch(e){$("list-label").textContent="Unable to load sites: "+e.message;}
 }
 async function choose(item){
  if(state.view==="earth"){
-  state.selected=item;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();return;
+  state.selected=item;state.measurements=null;state.angle=-rad(item.longitude);state.pitch=rad(item.latitude);paint();loadEarthMeasurements(item);return;
  }
  const token=++state.token;
  state.view="earth";state.reference=null;state.selected=null;state.selectedSite=item;
@@ -157,10 +175,28 @@ async function choose(item){
   const data=await request("/science/analog-screening?body="+state.target+"&site_id="+encodeURIComponent(item.id));
   if(token!==state.token)return;
   state.screening=data;state.earth=data.results||[];
+  if(state.earth.length){state.selected=state.earth[0];loadEarthMeasurements(state.earth[0]);}
   if(state.earth.length){state.angle=-rad(state.earth[0].longitude);state.pitch=rad(state.earth[0].latitude);}
   paint();
  }catch(e){$("list-label").textContent="Unable to load evidence screening: "+e.message;}
 }
+
+async function loadEarthMeasurements(item){
+ const seq=++state.measureSeq;
+ state.measureLoading=true;state.measurements=null;details();
+ try{
+  const data=await request("/science/earth-environment?latitude="+item.latitude+"&longitude="+item.longitude);
+  if(seq!==state.measureSeq||state.selected?.id!==item.id)return;
+  state.measurements=data;
+ }catch(error){
+  if(seq!==state.measureSeq)return;
+  state.measurements={status:"unavailable",source_count:0,measurements:{},
+    source_errors:[{source:"Earth measurement services",reason:error.message}]};
+ }
+ if(seq!==state.measureSeq)return;
+ state.measureLoading=false;details();
+}
+
 $("moon-tab").addEventListener("click",()=>loadPlanet("moon"));$("mars-tab").addEventListener("click",()=>loadPlanet("mars"));
 $("back-button").addEventListener("click",()=>loadPlanet(state.target));$("reset-button").addEventListener("click",()=>{state.angle=-.5;state.pitch=.18;state.zoom=1;render()});
 $("location-search").addEventListener("input",renderList);
