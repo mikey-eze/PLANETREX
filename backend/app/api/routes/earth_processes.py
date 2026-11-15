@@ -1,4 +1,4 @@
-"""NASA POWER Earth-only hydrology and surface-process descriptors.
+"""NASA POWER Earth-only atmospheric, precipitation and insolation descriptors.
 
 No Earth observations are treated as interchangeable with Mars wind/dust,
 lunar regolith, lunar temperatures or planetary ice observations.
@@ -16,14 +16,14 @@ URL="https://power.larc.nasa.gov/api/temporal/daily/point"
 DOCUMENTATION="https://power.larc.nasa.gov/docs/methodology/data/sources_hydrology/"
 CACHE={}
 PARAMS={
- "TSURF":{"label":"NASA POWER gridded land surface temperature","unit":"°C","aggregation":"mean",
-          "dimension":"temperature","source_kind":"reanalysis surface temperature; not satellite infrared measurement"},
- "PRECTOT":{"label":"Earth terrestrial January precipitation","unit":"mm/31 days","aggregation":"sum",
-          "dimension":"water_process","source_kind":"NASA hydrology precipitation; not ground ice or planetary water"},
- "GWETTOP":{"label":"Terrestrial near-surface soil wetness fraction","unit":"fraction","aggregation":"mean",
-          "dimension":"water_process","source_kind":"land-surface reanalysis; not water ice/usable resource"},
- "WS10M":{"label":"Earth 10m wind speed","unit":"m/s","aggregation":"mean",
-          "dimension":"aeolian","source_kind":"terrestrial wind, lunar vacuum has no similar process"}
+ "T2M":{"label":"Earth 2-metre air temperature (NOT ground temperature)","unit":"°C","aggregation":"mean",
+        "dimension":"atmospheric_environment","source_kind":"NASA POWER MERRA-2-informed Earth climate"},
+ "PRECTOTCORR":{"label":"Earth corrected January precipitation","unit":"mm/31 days","aggregation":"sum",
+        "dimension":"hydrologic_environment","source_kind":"NASA POWER corrected precipitation, not lunar/Martian ice"},
+ "WS10M":{"label":"Earth 10-metre wind speed","unit":"m/s","aggregation":"mean",
+        "dimension":"aeolian","source_kind":"Terrestrial atmospheric wind; lunar vacuum is not comparable"},
+ "ALLSKY_SFC_SW_DWN":{"label":"Earth incoming shortwave radiation","unit":"kWh/m²/day","aggregation":"mean",
+        "dimension":"illumination","source_kind":"Terrestrial atmosphere/surface solar irradiance; not lunar direct irradiance"}
 }
 
 def summarize_power(data:dict)->dict:
@@ -63,7 +63,7 @@ async def earth_processes(
         data=summarize_power(payload)
     except httpx.HTTPStatusError as exc:
         import logging
-        logging.getLogger("planetrex.power").warning("NASA POWER HY rejected parameters %s: HTTP %d response=%s", ",".join(PARAMS), exc.response.status_code, exc.response.text[:850])
+        logging.getLogger("planetrex.power").warning("NASA POWER AG rejected parameters %s: HTTP %d response=%s", ",".join(PARAMS), exc.response.status_code, exc.response.text[:850])
         raise HTTPException(status_code=502,
             detail=f"NASA POWER surface process request returned upstream HTTP {exc.response.status_code}") from exc
     except (httpx.HTTPError,ValueError) as exc:
