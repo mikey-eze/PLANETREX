@@ -78,31 +78,46 @@ def create_app() -> FastAPI:
     # Same-origin texture bytes permit smooth per-pixel sphere projection in Canvas.
     # Only these three explicitly licensed Solar System Scope CC BY 4.0 assets
     # can be requested; this is not an arbitrary internet proxy.
+    # Prefer the existing licensed textures; fall back to a verified public
+    # planetary texture collection if the primary host is unavailable on Render.
     texture_urls = {
-        "moon": "https://www.solarsystemscope.com/textures/download/2k_moon.jpg",
-        "mars": "https://www.solarsystemscope.com/textures/download/2k_mars.jpg",
-        "earth": "https://www.solarsystemscope.com/textures/download/2k_earth_daymap.jpg",
+        "moon": (
+            "https://www.solarsystemscope.com/textures/download/2k_moon.jpg",
+            "https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap1k.jpg",
+        ),
+        "mars": (
+            "https://www.solarsystemscope.com/textures/download/2k_mars.jpg",
+            "https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/marsmap1k.jpg",
+        ),
+        "earth": (
+            "https://www.solarsystemscope.com/textures/download/2k_earth_daymap.jpg",
+            "https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/earthmap1k.jpg",
+        ),
     }
     texture_cache: dict[str, bytes] = {}
     texture_locks = {body: asyncio.Lock() for body in texture_urls}
 
     @application.get("/visual/texture/{body}.jpg", include_in_schema=False)
     async def visual_texture(body: str) -> Response:
-        url = texture_urls.get(body)
-        if url is None:
+        urls = texture_urls.get(body)
+        if urls is None:
             raise HTTPException(status_code=404, detail="Unknown planet texture")
         async with texture_locks[body]:
             if body not in texture_cache:
-                try:
-                    async with httpx.AsyncClient(timeout=35.0, follow_redirects=True) as client:
-                        result = await client.get(url)
-                        result.raise_for_status()
-                    content = result.content
-                    if not content.startswith(b"\xff\xd8\xff") or not 100000 < len(content) < 12000000:
-                        raise ValueError("Upstream texture is not a valid-size JPEG")
-                    texture_cache[body] = content
-                except (httpx.HTTPError, ValueError) as exc:
-                    raise HTTPException(status_code=502, detail="Source texture unavailable") from exc
+                async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+                    for url in urls:
+                        try:
+                            result = await client.get(url)
+                            result.raise_for_status()
+                            content = result.content
+                            if not content.startswith(bytes.fromhex("ffd8ff")) or not 10000 < len(content) < 12000000:
+                                raise ValueError("Upstream texture is not a valid-size JPEG")
+                            texture_cache[body] = content
+                            break
+                        except (httpx.HTTPError, ValueError):
+                            continue
+                if body not in texture_cache:
+                    raise HTTPException(status_code=502, detail="Source texture unavailable")
         return Response(content=texture_cache[body], media_type="image/jpeg",
                         headers={"Cache-Control": "public, max-age=86400"})
 
